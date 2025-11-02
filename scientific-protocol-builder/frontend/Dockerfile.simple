@@ -1,0 +1,67 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy only the essential files
+COPY public/ ./public/
+COPY src/ ./src/
+
+# Create a minimal package.json
+RUN echo '{ \
+  "name": "protocol-builder-frontend", \
+  "version": "1.0.0", \
+  "private": true, \
+  "dependencies": { \
+    "react": "^18.2.0", \
+    "react-dom": "^18.2.0", \
+    "react-router-dom": "^6.8.1", \
+    "react-scripts": "5.0.1", \
+    "@mui/material": "^5.14.0", \
+    "@mui/icons-material": "^5.14.0", \
+    "@emotion/react": "^11.11.0", \
+    "@emotion/styled": "^11.11.0", \
+    "axios": "^1.6.0", \
+    "zustand": "^4.4.0", \
+    "react-hook-form": "^7.48.0", \
+    "yup": "^1.3.0", \
+    "react-toastify": "^9.1.0", \
+    "typescript": "^4.9.5" \
+  }, \
+  "scripts": { \
+    "start": "GENERATE_SOURCEMAP=false react-scripts start", \
+    "build": "GENERATE_SOURCEMAP=false react-scripts build" \
+  }, \
+  "browserslist": { \
+    "production": [">0.2%", "not dead", "not op_mini all"], \
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"] \
+  } \
+}' > package.json
+
+# Install dependencies with specific flags to avoid conflicts
+RUN npm install --legacy-peer-deps --no-audit --no-fund
+
+# Copy TypeScript config
+RUN echo '{ \
+  "compilerOptions": { \
+    "target": "es5", \
+    "lib": ["dom", "dom.iterable", "esnext"], \
+    "allowJs": true, \
+    "skipLibCheck": true, \
+    "esModuleInterop": true, \
+    "allowSyntheticDefaultImports": true, \
+    "strict": true, \
+    "forceConsistentCasingInFileNames": true, \
+    "noFallthroughCasesInSwitch": true, \
+    "module": "esnext", \
+    "moduleResolution": "node", \
+    "resolveJsonModule": true, \
+    "isolatedModules": true, \
+    "noEmit": true, \
+    "jsx": "react-jsx" \
+  }, \
+  "include": ["src"] \
+}' > tsconfig.json
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
