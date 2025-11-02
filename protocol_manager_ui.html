@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Protocol Manager - Save & Retrieve Protocols</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin: 2rem;
+            height: calc(100vh - 200px);
+        }
+        
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-y: auto;
+        }
+        
+        .main-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-y: auto;
+        }
+        
+        .section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            background: #f8f9fa;
+        }
+        
+        .section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin: 0.25rem;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #229954; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-warning { background: #f39c12; }
+        .btn-warning:hover { background: #e67e22; }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #34495e;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ecf0f1;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .protocol-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .protocol-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .protocol-card.selected {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+        
+        .protocol-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .protocol-meta {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        
+        .protocol-description {
+            color: #444;
+            font-size: 0.9em;
+        }
+        
+        .protocol-tags {
+            margin-top: 0.5rem;
+        }
+        
+        .tag {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin: 0.1rem;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ecf0f1;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .alert {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+        
+        .alert-success {
+            background: #d5f4e6;
+            border-color: #27ae60;
+            color: #1e8449;
+        }
+        
+        .alert-error {
+            background: #fadbd8;
+            border-color: #e74c3c;
+            color: #c0392b;
+        }
+        
+        .alert-info {
+            background: #d6eaf8;
+            border-color: #3498db;
+            color: #1f618d;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📁 Protocol Manager</h1>
+        <p>Save, organize, and retrieve your scientific protocols</p>
+    </div>
+    
+    <div class="container">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="section">
+                <h3>📊 Storage Statistics</h3>
+                <div class="stats-grid" id="storageStats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalProtocols">0</div>
+                        <div class="stat-label">Total Protocols</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="userProtocols">0</div>
+                        <div class="stat-label">My Protocols</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="storageUsed">0</div>
+                        <div class="stat-label">KB Used</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3>🔍 Search & Filter</h3>
+                <input type="text" class="search-box" id="searchBox" placeholder="Search protocols...">
+                
+                <div class="form-group">
+                    <label for="categoryFilter">Category:</label>
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="Molecular Biology">Molecular Biology</option>
+                        <option value="Cell Biology">Cell Biology</option>
+                        <option value="Biochemistry">Biochemistry</option>
+                        <option value="Microbiology">Microbiology</option>
+                        <option value="General">General</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sortBy">Sort by:</label>
+                    <select id="sortBy">
+                        <option value="modified">Last Modified</option>
+                        <option value="created">Date Created</option>
+                        <option value="name">Name</option>
+                        <option value="author">Author</option>
+                    </select>
+                </div>
+                
+                <button class="btn" onclick="refreshProtocolList()">🔄 Refresh</button>
+            </div>
+            
+            <div class="section">
+                <h3>⚙️ Actions</h3>
+                <button class="btn btn-success" onclick="openSaveDialog()">💾 Save Current</button>
+                <button class="btn" onclick="openImportDialog()">📥 Import</button>
+                <button class="btn btn-warning" onclick="exportSelected()">📤 Export</button>
+                <button class="btn btn-danger" onclick="deleteSelected()">🗑️ Delete</button>
+            </div>
+        </div>
+        
+        <!-- Main Panel -->
+        <div class="main-panel">
+            <div class="section">
+                <h3>📋 My Protocols</h3>
+                <div id="protocolList">
+                    <p style="text-align: center; color: #666; padding: 2rem;">
+                        No protocols found. Create your first protocol to get started!
+                    </p>
+                </div>
+            </div>
+            
+            <div class="section" id="protocolDetails" style="display: none;">
+                <h3>📄 Protocol Details</h3>
+                <div id="detailsContent"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Save Protocol Modal -->
+    <div id="saveModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSaveDialog()">&times;</span>
+            <h2>💾 Save Protocol</h2>
+            <form id="saveForm">
+                <div class="form-group">
+                    <label for="protocolName">Protocol Name:</label>
+                    <input type="text" id="protocolName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="protocolDescription">Description:</label>
+                    <textarea id="protocolDescription" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="protocolCategory">Category:</label>
+                    <select id="protocolCategory">
+                        <option value="Molecular Biology">Molecular Biology</option>
+                        <option value="Cell Biology">Cell Biology</option>
+                        <option value="Biochemistry">Biochemistry</option>
+                        <option value="Microbiology">Microbiology</option>
+                        <option value="General">General</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="protocolTags">Tags (comma-separated):</label>
+                    <input type="text" id="protocolTags" placeholder="DNA, extraction, PCR">
+                </div>
+                
+                <div class="form-group">
+                    <label for="protocolVersion">Version:</label>
+                    <input type="text" id="protocolVersion" value="1.0">
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="protocolShared"> Share with other users
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-success">💾 Save Protocol</button>
+                <button type="button" class="btn" onclick="closeSaveDialog()">Cancel</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Import Protocol Modal -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeImportDialog()">&times;</span>
+            <h2>📥 Import Protocol</h2>
+            <div class="form-group">
+                <label for="importFile">Select Protocol File:</label>
+                <input type="file" id="importFile" accept=".json,.xml" onchange="handleFileSelect(event)">
+            </div>
+            <div id="importPreview" style="display: none;">
+                <h4>Protocol Preview:</h4>
+                <div id="previewContent"></div>
+                <button class="btn btn-success" onclick="confirmImport()">📥 Import Protocol</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="messages"></div>
+    
+    <script src="protocol_storage.js"></script>
+    <script>
+        let selectedProtocol = null;
+        let importData = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshProtocolList();
+            updateStorageStats();
+            
+            // Event listeners
+            document.getElementById('searchBox').addEventListener('input', debounce(refreshProtocolList, 300));
+            document.getElementById('categoryFilter').addEventListener('change', refreshProtocolList);
+            document.getElementById('sortBy').addEventListener('change', refreshProtocolList);
+            document.getElementById('saveForm').addEventListener('submit', handleSaveProtocol);
+        });
+        
+        // Refresh protocol list
+        function refreshProtocolList() {
+            const searchQuery = document.getElementById('searchBox').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const sortBy = document.getElementById('sortBy').value;
+            
+            const filters = {
+                category: categoryFilter,
+                sortBy: sortBy,
+                sortOrder: 'desc'
+            };
+            
+            const protocols = protocolStorage.searchProtocols(searchQuery, filters);
+            displayProtocols(protocols);
+        }
+        
+        // Display protocols
+        function displayProtocols(protocols) {
+            const listElement = document.getElementById('protocolList');
+            
+            if (protocols.length === 0) {
+                listElement.innerHTML = `
+                    <p style="text-align: center; color: #666; padding: 2rem;">
+                        No protocols found. ${document.getElementById('searchBox').value ? 'Try adjusting your search.' : 'Create your first protocol to get started!'}
+                    </p>
+                `;
+                return;
+            }
+            
+            listElement.innerHTML = protocols.map(protocol => `
+                <div class="protocol-card" onclick="selectProtocol('${protocol.id}')">
+                    <div class="protocol-title">${protocol.name}</div>
+                    <div class="protocol-meta">
+                        By ${protocol.author} • ${formatDate(protocol.modified)} • ${protocol.category}
+                        ${protocol.shared ? ' • 🌐 Shared' : ''}
+                        ${protocol.readonly ? ' • 🔒 Read-only' : ''}
+                    </div>
+                    <div class="protocol-description">${protocol.description || 'No description provided'}</div>
+                    ${protocol.tags && protocol.tags.length > 0 ? `
+                        <div class="protocol-tags">
+                            ${protocol.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+        
+        // Select protocol
+        function selectProtocol(protocolId) {
+            selectedProtocol = protocolId;
+            
+            // Update visual selection
+            document.querySelectorAll('.protocol-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            
+            // Load and display protocol details
+            try {
+                const protocol = protocolStorage.loadProtocol(protocolId);
+                displayProtocolDetails(protocol);
+            } catch (error) {
+                showMessage('Error loading protocol: ' + error.message, 'error');
+            }
+        }
+        
+        // Display protocol details
+        function displayProtocolDetails(protocol) {
+            const detailsSection = document.getElementById('protocolDetails');
+            const detailsContent = document.getElementById('detailsContent');
+            
+            detailsContent.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <h4>${protocol.name}</h4>
+                        <p><strong>Author:</strong> ${protocol.author}</p>
+                        <p><strong>Category:</strong> ${protocol.category}</p>
+                        <p><strong>Version:</strong> ${protocol.version}</p>
+                        <p><strong>Created:</strong> ${formatDate(protocol.created)}</p>
+                        <p><strong>Modified:</strong> ${formatDate(protocol.modified)}</p>
+                        ${protocol.lastAccessed ? `<p><strong>Last Accessed:</strong> ${formatDate(protocol.lastAccessed)}</p>` : ''}
+                    </div>
+                    <div>
+                        <p><strong>Description:</strong></p>
+                        <p>${protocol.description || 'No description provided'}</p>
+                        ${protocol.tags && protocol.tags.length > 0 ? `
+                            <p><strong>Tags:</strong></p>
+                            <div class="protocol-tags">
+                                ${protocol.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1rem;">
+                    <button class="btn btn-success" onclick="loadProtocolIntoWorkspace()">📂 Load in Builder</button>
+                <button class="btn" onclick="viewProtocolWorkspace()">👁️ View Protocol</button>
+                    <button class="btn" onclick="duplicateProtocol()">📋 Duplicate</button>
+                    <button class="btn btn-warning" onclick="exportProtocol()">📤 Export</button>
+                    ${!protocol.readonly || protocol.author === protocolStorage.currentUser ? 
+                        `<button class="btn btn-danger" onclick="deleteProtocol()">🗑️ Delete</button>` : ''
+                    }
+                </div>
+            `;
+            
+            detailsSection.style.display = 'block';
+        }
+        
+        // Update storage statistics
+        function updateStorageStats() {
+            const stats = protocolStorage.getStorageStats();
+            document.getElementById('totalProtocols').textContent = stats.totalProtocols;
+            document.getElementById('userProtocols').textContent = stats.userProtocols;
+            document.getElementById('storageUsed').textContent = Math.round(stats.storageUsed);
+        }
+        
+        // Save protocol dialog
+        function openSaveDialog() {
+            if (typeof workspace === 'undefined') {
+                showMessage('No workspace available. Open the protocol builder first.', 'error');
+                return;
+            }
+            
+            document.getElementById('saveModal').style.display = 'block';
+        }
+        
+        function closeSaveDialog() {
+            document.getElementById('saveModal').style.display = 'none';
+            document.getElementById('saveForm').reset();
+        }
+        
+        // Handle save protocol
+        function handleSaveProtocol(event) {
+            event.preventDefault();
+            
+            try {
+                // Get workspace data (would come from actual Blockly workspace)
+                const workspaceXml = '<xml><!-- Placeholder XML --></xml>';
+                
+                const metadata = {
+                    name: document.getElementById('protocolName').value,
+                    description: document.getElementById('protocolDescription').value,
+                    category: document.getElementById('protocolCategory').value,
+                    tags: document.getElementById('protocolTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+                    version: document.getElementById('protocolVersion').value,
+                    shared: document.getElementById('protocolShared').checked
+                };
+                
+                const protocolData = {
+                    xml: workspaceXml,
+                    analysis: null // Would come from protocol analyzer
+                };
+                
+                const protocolId = protocolStorage.saveProtocol(protocolData, metadata);
+                showMessage('Protocol saved successfully!', 'success');
+                closeSaveDialog();
+                refreshProtocolList();
+                updateStorageStats();
+                
+            } catch (error) {
+                showMessage('Error saving protocol: ' + error.message, 'error');
+            }
+        }
+        
+        // Import dialog
+        function openImportDialog() {
+            document.getElementById('importModal').style.display = 'block';
+        }
+        
+        function closeImportDialog() {
+            document.getElementById('importModal').style.display = 'none';
+            document.getElementById('importPreview').style.display = 'none';
+            importData = null;
+        }
+        
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    importData = JSON.parse(e.target.result);
+                    displayImportPreview(importData);
+                } catch (error) {
+                    showMessage('Error reading file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        // Display import preview
+        function displayImportPreview(data) {
+            const previewElement = document.getElementById('previewContent');
+            previewElement.innerHTML = `
+                <p><strong>Name:</strong> ${data.metadata?.name || 'Unknown'}</p>
+                <p><strong>Description:</strong> ${data.metadata?.description || 'No description'}</p>
+                <p><strong>Original Author:</strong> ${data.metadata?.author || 'Unknown'}</p>
+                <p><strong>Category:</strong> ${data.metadata?.category || 'General'}</p>
+                <p><strong>Version:</strong> ${data.metadata?.version || '1.0'}</p>
+            `;
+            document.getElementById('importPreview').style.display = 'block';
+        }
+        
+        // Confirm import
+        function confirmImport() {
+            try {
+                const protocolId = protocolStorage.importProtocol(importData);
+                showMessage('Protocol imported successfully!', 'success');
+                closeImportDialog();
+                refreshProtocolList();
+                updateStorageStats();
+            } catch (error) {
+                showMessage('Error importing protocol: ' + error.message, 'error');
+            }
+        }
+        
+        // Action functions
+        function loadProtocolIntoWorkspace() {
+            if (!selectedProtocol) return;
+            
+            try {
+                const protocol = protocolStorage.loadProtocol(selectedProtocol);
+                
+                // Open the main protocol builder with this protocol
+                const builderURL = `demo.html?loadProtocol=${selectedProtocol}`;
+                window.open(builderURL, '_blank');
+                
+                showMessage(`Opening "${protocol.name}" in Protocol Builder`, 'success');
+            } catch (error) {
+                showMessage('Error loading protocol: ' + error.message, 'error');
+            }
+        }
+        
+        function viewProtocolWorkspace() {
+            if (!selectedProtocol) return;
+            
+            try {
+                const protocol = protocolStorage.loadProtocol(selectedProtocol);
+                
+                // Open protocol viewer
+                const viewerURL = `protocol_viewer.html?protocol=${selectedProtocol}`;
+                window.open(viewerURL, '_blank', 'width=1200,height=800');
+                
+            } catch (error) {
+                showMessage('Error viewing protocol: ' + error.message, 'error');
+            }
+        }
+        
+        function duplicateProtocol() {
+            if (!selectedProtocol) return;
+            
+            try {
+                const newName = prompt('Enter name for the duplicated protocol:');
+                if (newName) {
+                    protocolStorage.duplicateProtocol(selectedProtocol, newName);
+                    showMessage('Protocol duplicated successfully!', 'success');
+                    refreshProtocolList();
+                    updateStorageStats();
+                }
+            } catch (error) {
+                showMessage('Error duplicating protocol: ' + error.message, 'error');
+            }
+        }
+        
+        function exportProtocol() {
+            if (!selectedProtocol) return;
+            
+            try {
+                protocolStorage.exportProtocol(selectedProtocol);
+                showMessage('Protocol exported successfully!', 'success');
+            } catch (error) {
+                showMessage('Error exporting protocol: ' + error.message, 'error');
+            }
+        }
+        
+        function exportSelected() {
+            if (!selectedProtocol) {
+                showMessage('Please select a protocol to export', 'error');
+                return;
+            }
+            exportProtocol();
+        }
+        
+        function deleteProtocol() {
+            if (!selectedProtocol) return;
+            
+            if (confirm('Are you sure you want to delete this protocol? This action cannot be undone.')) {
+                try {
+                    protocolStorage.deleteProtocol(selectedProtocol);
+                    showMessage('Protocol deleted successfully!', 'success');
+                    selectedProtocol = null;
+                    document.getElementById('protocolDetails').style.display = 'none';
+                    refreshProtocolList();
+                    updateStorageStats();
+                } catch (error) {
+                    showMessage('Error deleting protocol: ' + error.message, 'error');
+                }
+            }
+        }
+        
+        function deleteSelected() {
+            if (!selectedProtocol) {
+                showMessage('Please select a protocol to delete', 'error');
+                return;
+            }
+            deleteProtocol();
+        }
+        
+        // Utility functions
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString();
+        }
+        
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        function showMessage(message, type) {
+            const messagesElement = document.getElementById('messages');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '2000';
+            alertDiv.style.minWidth = '300px';
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
+        // Create example protocol
+        function createExampleProtocol() {
+            const exampleXml = `<xml xmlns="https://developers.google.com/blockly/xml">
+                <block type="protocol_definition" x="20" y="20">
+                    <field name="PROTOCOL_NAME">Example_DNA_PCR</field>
+                    <field name="DESCRIPTION">Example DNA extraction and PCR protocol</field>
+                    <statement name="STEPS">
+                        <block type="sample_variable">
+                            <field name="NAME">blood_sample</field>
+                            <field name="TYPE">TISSUE</field>
+                            <field name="DESCRIPTION">Whole blood sample</field>
+                            <value name="VOLUME">
+                                <block type="math_number"><field name="NUM">200</field></block>
+                            </value>
+                            <next>
+                                <block type="preparation_step">
+                                    <field name="WHAT">blood sample</field>
+                                    <field name="METHOD">lysis</field>
+                                    <next>
+                                        <block type="qpcr_system">
+                                            <field name="SYSTEM">CFX96</field>
+                                            <field name="CHEMISTRY">SYBR</field>
+                                            <field name="RESULT_VAR">pcr_results</field>
+                                        </block>
+                                    </next>
+                                </block>
+                            </next>
+                        </block>
+                    </statement>
+                </block>
+            </xml>`;
+            
+            const metadata = {
+                name: 'Example DNA Extraction & PCR',
+                description: 'A complete example protocol demonstrating DNA extraction from blood followed by PCR amplification',
+                category: 'Molecular Biology',
+                tags: ['DNA', 'extraction', 'PCR', 'blood', 'example'],
+                version: '1.0',
+                shared: true
+            };
+            
+            try {
+                const protocolId = protocolStorage.saveProtocol({ xml: exampleXml }, metadata);
+                showMessage('Example protocol created successfully!', 'success');
+                refreshProtocolList();
+                updateStorageStats();
+                return protocolId;
+            } catch (error) {
+                console.error('Error creating example protocol:', error);
+            }
+        }
+        
+        // Create example protocol on first load
+        if (protocolStorage.getUserProtocols().length === 0) {
+            setTimeout(createExampleProtocol, 1000);
+        }
+    </script>
+</body>
+</html>

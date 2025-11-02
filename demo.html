@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Scientific Protocol Builder - Live Demo</title>
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .hero {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .hero h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .hero p {
+            font-size: 1.2em;
+            margin: 1rem 0;
+            opacity: 0.9;
+        }
+        
+        .demo-container {
+            background: white;
+            margin: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .demo-header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .demo-content {
+            display: flex;
+            height: 600px;
+        }
+        
+        .blockly-panel {
+            flex: 2;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        .output-panel {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        .controls {
+            background: #ecf0f1;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            margin: 0.3rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52,152,219,0.3);
+        }
+        
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #229954; }
+        .btn-warning { background: #f39c12; }
+        .btn-warning:hover { background: #e67e22; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        
+        .output-section {
+            background: white;
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .output-section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        .alert {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+        
+        .alert-success {
+            background: #d5f4e6;
+            border-color: #27ae60;
+            color: #1e8449;
+        }
+        
+        .alert-warning {
+            background: #fef9e7;
+            border-color: #f39c12;
+            color: #b7950b;
+        }
+        
+        .alert-error {
+            background: #fadbd8;
+            border-color: #e74c3c;
+            color: #c0392b;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-card h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>🧪 Scientific Protocol Builder</h1>
+        <p>Design, document, and execute laboratory protocols with visual programming</p>
+    </div>
+    
+    <div class="demo-container">
+        <div class="demo-header">
+            <h2>Live Protocol Designer</h2>
+            <div>
+                <span id="statusIndicator" class="alert-success" style="padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9em;">
+                    ✓ System Ready
+                </span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="loadExampleProtocol('pcr')">📋 Load PCR Protocol</button>
+            <button class="btn" onclick="loadExampleProtocol('elisa')">🔬 Load ELISA Protocol</button>
+            <button class="btn btn-success" onclick="generateReadable()">📄 Readable Format</button>
+            <button class="btn" onclick="openProtocolManager()">📁 Protocol Manager</button>
+            <button class="btn btn-warning" onclick="generatePython()">🐍 Python Code</button>
+            <button class="btn" onclick="analyzeProtocol()">📊 Analyze Protocol</button>
+            <button class="btn btn-danger" onclick="clearWorkspace()">🗑️ Clear</button>
+        </div>
+        
+        <div class="demo-content">
+            <div class="blockly-panel">
+                <div id="blocklyDiv" style="height: 100%; width: 100%;"></div>
+            </div>
+            
+            <div class="output-panel">
+                <div class="stats" id="protocolStats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stepCount">0</div>
+                        <div class="stat-label">Steps</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="variableCount">0</div>
+                        <div class="stat-label">Variables</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="outputCount">0</div>
+                        <div class="stat-label">Outputs</div>
+                    </div>
+                </div>
+                
+                <div class="output-section">
+                    <h3>🎯 Protocol Output</h3>
+                    <div id="outputContent">
+                        <p style="color: #7f8c8d; text-align: center; padding: 2rem;">
+                            Load a protocol or design your own to see the generated output here.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🧬</div>
+            <h3>Scientific Blocks</h3>
+            <p>Purpose-built blocks for laboratory procedures including mixing, incubation, measurement, and analysis steps.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <h3>Control Flow</h3>
+            <p>Advanced control structures including loops, conditionals, and parallel execution for complex experimental workflows.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Smart Analysis</h3>
+            <p>Automatic analysis of protocol inputs, outputs, and intermediate variables with quality control recommendations.</p>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-icon">🐍</div>
+            <h3>Code Generation</h3>
+            <p>Generate executable Python code and human-readable documentation from your visual protocol designs.</p>
+        </div>
+    </div>
+    
+    <script src="blocks/experiment_blocks.js"></script>
+    <script src="blocks/variable_blocks.js"></script>
+    <script src="blocks/control_blocks.js"></script>
+    <script src="generators/python_generator.js"></script>
+    <script src="generators/readable_generator.js"></script>
+    <script src="protocol_analyzer.js"></script>
+    <script src="protocol_storage.js"></script>
+    
+    <script>
+        let workspace;
+        
+        const toolbox = {
+            "kind": "categoryToolbox",
+            "contents": [
+                {
+                    "kind": "category",
+                    "name": "Variables & Materials",
+                    "colour": "#27ae60",
+                    "contents": [
+                        {"kind": "block", "type": "sample_variable"},
+                        {"kind": "block", "type": "reagent_variable"},
+                        {"kind": "block", "type": "equipment_variable"},
+                        {"kind": "block", "type": "parameter_variable"},
+                        {"kind": "block", "type": "get_variable"},
+                        {"kind": "block", "type": "set_variable"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Experiment Steps",
+                    "colour": "#3498db",
+                    "contents": [
+                        {"kind": "block", "type": "preparation_step"},
+                        {"kind": "block", "type": "mixing_step"},
+                        {"kind": "block", "type": "incubation_step"},
+                        {"kind": "block", "type": "measurement_step"},
+                        {"kind": "block", "type": "transfer_step"},
+                        {"kind": "block", "type": "centrifuge_step"},
+                        {"kind": "block", "type": "wash_step"},
+                        {"kind": "block", "type": "observation_step"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Control Flow",
+                    "colour": "#9b59b6",
+                    "contents": [
+                        {"kind": "block", "type": "controls_if"},
+                        {"kind": "block", "type": "controls_repeat_ext"},
+                        {"kind": "block", "type": "controls_whileUntil"},
+                        {"kind": "block", "type": "controls_for"},
+                        {"kind": "block", "type": "protocol_sequence"},
+                        {"kind": "block", "type": "parallel_steps"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Logic & Math",
+                    "colour": "#e67e22",
+                    "contents": [
+                        {"kind": "block", "type": "logic_compare"},
+                        {"kind": "block", "type": "logic_operation"},
+                        {"kind": "block", "type": "logic_negate"},
+                        {"kind": "block", "type": "logic_boolean"},
+                        {"kind": "block", "type": "math_number"},
+                        {"kind": "block", "type": "math_arithmetic"},
+                        {"kind": "block", "type": "text"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Protocol Management",
+                    "colour": "#e74c3c",
+                    "contents": [
+                        {"kind": "block", "type": "protocol_definition"},
+                        {"kind": "block", "type": "protocol_call"},
+                        {"kind": "block", "type": "protocol_input"},
+                        {"kind": "block", "type": "protocol_output"}
+                    ]
+                }
+            ]
+        };
+        
+        // Initialize workspace
+        document.addEventListener('DOMContentLoaded', function() {
+            workspace = Blockly.inject('blocklyDiv', {
+                toolbox: toolbox,
+                grid: {spacing: 20, length: 3, colour: '#ccc', snap: true},
+                zoom: {controls: true, wheel: true, startScale: 0.9},
+                trashcan: true,
+                sounds: false
+            });
+            
+            workspace.addChangeListener(updateStats);
+            updateStats();
+            
+            // Check for protocol to load from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const protocolId = urlParams.get('loadProtocol');
+            if (protocolId && typeof protocolStorage !== 'undefined') {
+                setTimeout(() => loadProtocolFromStorage(protocolId), 500);
+            }
+        });
+        
+        function updateStats() {
+            try {
+                const analysis = ProtocolAnalyzer.analyze(workspace);
+                document.getElementById('stepCount').textContent = analysis.stepCount;
+                document.getElementById('variableCount').textContent = 
+                    analysis.inputs.length + analysis.intermediates.length;
+                document.getElementById('outputCount').textContent = analysis.outputs.length;
+            } catch (error) {
+                console.log('Analysis error:', error);
+            }
+        }
+        
+        function loadExampleProtocol(type) {
+            workspace.clear();
+            
+            if (type === 'pcr') {
+                loadPCRProtocol();
+            } else if (type === 'elisa') {
+                loadELISAProtocol();
+            }
+            
+            showAlert('Protocol loaded successfully!', 'success');
+            updateStats();
+        }
+        
+        function loadPCRProtocol() {
+            const xml = Blockly.Xml.textToDom(`
+            <xml xmlns="https://developers.google.com/blockly/xml">
+                <block type="protocol_definition" x="20" y="20">
+                    <field name="PROTOCOL_NAME">PCR_Amplification</field>
+                    <field name="DESCRIPTION">Standard PCR protocol for DNA amplification</field>
+                    <statement name="STEPS">
+                        <block type="sample_variable">
+                            <field name="NAME">template_dna</field>
+                            <field name="TYPE">DNA</field>
+                            <field name="DESCRIPTION">Template DNA for amplification</field>
+                            <value name="VOLUME">
+                                <block type="math_number"><field name="NUM">2</field></block>
+                            </value>
+                            <next>
+                                <block type="reagent_variable">
+                                    <field name="NAME">taq_polymerase</field>
+                                    <field name="UNITS">U/μL</field>
+                                    <field name="STORAGE">-20C</field>
+                                    <field name="DESCRIPTION">Thermostable DNA polymerase</field>
+                                    <value name="CONCENTRATION">
+                                        <block type="math_number"><field name="NUM">5</field></block>
+                                    </value>
+                                    <next>
+                                        <block type="preparation_step">
+                                            <field name="WHAT">PCR master mix</field>
+                                            <field name="METHOD">pipetting</field>
+                                            <next>
+                                                <block type="controls_repeat_ext">
+                                                    <value name="TIMES">
+                                                        <block type="math_number"><field name="NUM">30</field></block>
+                                                    </value>
+                                                    <statement name="DO">
+                                                        <block type="incubation_step">
+                                                            <field name="SAMPLE">PCR reaction</field>
+                                                            <field name="CONDITIONS">STATIC</field>
+                                                            <value name="TEMPERATURE">
+                                                                <block type="math_number"><field name="NUM">94</field></block>
+                                                            </value>
+                                                            <value name="TIME">
+                                                                <block type="math_number"><field name="NUM">0.5</field></block>
+                                                            </value>
+                                                        </block>
+                                                    </statement>
+                                                    <next>
+                                                        <block type="measurement_step">
+                                                            <field name="MEASUREMENT_TYPE">ABSORBANCE</field>
+                                                            <field name="RESULT_VAR">product_concentration</field>
+                                                            <value name="WAVELENGTH">
+                                                                <block type="math_number"><field name="NUM">260</field></block>
+                                                            </value>
+                                                        </block>
+                                                    </next>
+                                                </block>
+                                            </next>
+                                        </block>
+                                    </next>
+                                </block>
+                            </next>
+                        </block>
+                    </statement>
+                </block>
+            </xml>`);
+            Blockly.Xml.domToWorkspace(xml, workspace);
+        }
+        
+        function loadELISAProtocol() {
+            const xml = Blockly.Xml.textToDom(`
+            <xml xmlns="https://developers.google.com/blockly/xml">
+                <block type="protocol_definition" x="20" y="20">
+                    <field name="PROTOCOL_NAME">ELISA_Assay</field>
+                    <field name="DESCRIPTION">Enzyme-linked immunosorbent assay</field>
+                    <statement name="STEPS">
+                        <block type="sample_variable">
+                            <field name="NAME">serum_samples</field>
+                            <field name="TYPE">SERUM</field>
+                            <field name="DESCRIPTION">Patient serum samples</field>
+                            <next>
+                                <block type="preparation_step">
+                                    <field name="WHAT">96-well plate</field>
+                                    <field name="METHOD">coating</field>
+                                    <next>
+                                        <block type="incubation_step">
+                                            <field name="SAMPLE">coated plate</field>
+                                            <field name="CONDITIONS">STATIC</field>
+                                            <value name="TEMPERATURE">
+                                                <block type="math_number"><field name="NUM">37</field></block>
+                                            </value>
+                                            <value name="TIME">
+                                                <block type="math_number"><field name="NUM">60</field></block>
+                                            </value>
+                                            <next>
+                                                <block type="wash_step">
+                                                    <field name="METHOD">ASPIRATION</field>
+                                                    <value name="CYCLES">
+                                                        <block type="math_number"><field name="NUM">3</field></block>
+                                                    </value>
+                                                    <next>
+                                                        <block type="measurement_step">
+                                                            <field name="MEASUREMENT_TYPE">ABSORBANCE</field>
+                                                            <field name="RESULT_VAR">optical_density</field>
+                                                            <value name="WAVELENGTH">
+                                                                <block type="math_number"><field name="NUM">450</field></block>
+                                                            </value>
+                                                        </block>
+                                                    </next>
+                                                </block>
+                                            </next>
+                                        </block>
+                                    </next>
+                                </block>
+                            </next>
+                        </block>
+                    </statement>
+                </block>
+            </xml>`);
+            Blockly.Xml.domToWorkspace(xml, workspace);
+        }
+        
+        function generateReadable() {
+            try {
+                const code = ReadableGenerator.workspaceToCode(workspace);
+                displayOutput('Readable Protocol', code);
+                showAlert('Readable format generated successfully!', 'success');
+            } catch (error) {
+                showAlert('Error generating readable format: ' + error.message, 'error');
+            }
+        }
+        
+        function generatePython() {
+            try {
+                const code = PythonGenerator.workspaceToCode(workspace);
+                displayOutput('Python Code', code);
+                showAlert('Python code generated successfully!', 'success');
+            } catch (error) {
+                showAlert('Error generating Python code: ' + error.message, 'error');
+            }
+        }
+        
+        function analyzeProtocol() {
+            try {
+                const analysis = ProtocolAnalyzer.analyze(workspace);
+                displayAnalysis(analysis);
+                showAlert('Protocol analysis complete!', 'success');
+            } catch (error) {
+                showAlert('Error analyzing protocol: ' + error.message, 'error');
+            }
+        }
+        
+        function displayOutput(title, content) {
+            document.getElementById('outputContent').innerHTML = `
+                <h4>${title}</h4>
+                <pre><code>${content}</code></pre>
+            `;
+        }
+        
+        function displayAnalysis(analysis) {
+            let html = '<h4>📊 Protocol Analysis</h4>';
+            
+            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">';
+            
+            html += '<div><h5>📥 Inputs</h5>';
+            if (analysis.inputs.length > 0) {
+                html += '<ul>';
+                analysis.inputs.forEach(input => {
+                    html += `<li><strong>${input.name}</strong> (${input.type})</li>`;
+                });
+                html += '</ul>';
+            } else {
+                html += '<p style="color: #7f8c8d;">No inputs defined</p>';
+            }
+            html += '</div>';
+            
+            html += '<div><h5>📤 Outputs</h5>';
+            if (analysis.outputs.length > 0) {
+                html += '<ul>';
+                analysis.outputs.forEach(output => {
+                    html += `<li><strong>${output.name}</strong> (${output.type})</li>`;
+                });
+                html += '</ul>';
+            } else {
+                html += '<p style="color: #7f8c8d;">No outputs defined</p>';
+            }
+            html += '</div>';
+            
+            html += '</div>';
+            
+            if (analysis.warnings.length > 0) {
+                html += '<div class="alert alert-warning"><h5>⚠️ Warnings</h5><ul>';
+                analysis.warnings.forEach(warning => {
+                    html += `<li>${warning}</li>`;
+                });
+                html += '</ul></div>';
+            }
+            
+            document.getElementById('outputContent').innerHTML = html;
+        }
+        
+        function loadProtocolFromStorage(protocolId) {
+            try {
+                const protocol = protocolStorage.loadProtocol(protocolId);
+                
+                if (protocol.workspace_xml) {
+                    const xml = Blockly.Xml.textToDom(protocol.workspace_xml);
+                    Blockly.Xml.clearWorkspaceAndLoadFromXml(xml, workspace);
+                    showAlert(`Loaded protocol: ${protocol.name}`, 'success');
+                    updateStats();
+                } else {
+                    showAlert('No workspace data found in protocol', 'error');
+                }
+            } catch (error) {
+                showAlert('Error loading protocol: ' + error.message, 'error');
+            }
+        }
+        
+        function openProtocolManager() {
+            window.open('protocol_manager_ui.html', '_blank', 'width=1400,height=800');
+        }
+        
+        function clearWorkspace() {
+            if (confirm('Are you sure you want to clear the workspace?')) {
+                workspace.clear();
+                document.getElementById('outputContent').innerHTML = `
+                    <p style="color: #7f8c8d; text-align: center; padding: 2rem;">
+                        Workspace cleared. Load a protocol or design your own to see the output here.
+                    </p>
+                `;
+                showAlert('Workspace cleared', 'warning');
+                updateStats();
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '1000';
+            alertDiv.style.minWidth = '300px';
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

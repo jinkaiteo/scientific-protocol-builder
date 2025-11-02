@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:15-alpine
+    container_name: protocol-builder-db
+    environment:
+      POSTGRES_DB: protocol_builder_dev
+      POSTGRES_USER: protocol_dev_user
+      POSTGRES_PASSWORD: dev_password_change_in_production
+    ports:
+      - "5433:5432"  # Custom port to avoid conflicts
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./database/init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - protocol-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U protocol_dev_user -d protocol_builder_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: protocol-builder-redis
+    ports:
+      - "6380:6379"  # Custom port to avoid conflicts
+    volumes:
+      - redis_data:/data
+    networks:
+      - protocol-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend API
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: protocol-builder-backend
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://protocol_dev_user:dev_password_change_in_production@database:5432/protocol_builder_dev
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your_jwt_secret_key_change_in_production
+      - PORT=3001
+    ports:
+      - "3081:3001"  # Custom port to avoid conflicts
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - uploads:/app/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - protocol-network
+    command: npm run dev
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: protocol-builder-frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:3081
+      - REACT_APP_VERSION=1.0.0-dev
+      - PORT=3000
+    ports:
+      - "3080:3000"  # Custom port to avoid conflicts
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - protocol-network
+    command: npm start
+
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+  uploads:
+    driver: local
+
+networks:
+  protocol-network:
+    driver: bridge

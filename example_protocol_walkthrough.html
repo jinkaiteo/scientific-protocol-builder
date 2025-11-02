@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Protocol Building Walkthrough - DNA Extraction & PCR</title>
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .walkthrough-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 1rem;
+            margin: 1rem;
+            height: calc(100vh - 200px);
+        }
+        
+        .steps-panel, .output-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-y: auto;
+        }
+        
+        .blockly-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .step {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .step:hover {
+            background: #e3f2fd;
+            transform: translateX(5px);
+        }
+        
+        .step.active {
+            background: #e3f2fd;
+            border-left-color: #27ae60;
+        }
+        
+        .step.completed {
+            background: #d5f4e6;
+            border-left-color: #27ae60;
+        }
+        
+        .step h4 {
+            margin: 0 0 0.5rem 0;
+            color: #2c3e50;
+        }
+        
+        .step p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .controls {
+            background: #34495e;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin: 0 0.25rem;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #229954; }
+        .btn-warning { background: #f39c12; }
+        .btn-warning:hover { background: #e67e22; }
+        
+        .output-section {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .output-section h4 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            max-height: 300px;
+        }
+        
+        .progress-bar {
+            background: #ecf0f1;
+            border-radius: 10px;
+            padding: 3px;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #3498db, #27ae60);
+            height: 20px;
+            border-radius: 7px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .instruction-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .instruction-box h5 {
+            margin: 0 0 0.5rem 0;
+            color: #856404;
+        }
+        
+        .variable-preview {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            font-family: monospace;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧬 Protocol Building Walkthrough</h1>
+        <p>Learn to build a DNA Extraction & PCR Protocol step by step</p>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar" style="width: 0%">0% Complete</div>
+        </div>
+    </div>
+    
+    <div class="walkthrough-container">
+        <!-- Left Panel: Step-by-Step Instructions -->
+        <div class="steps-panel">
+            <h3>📝 Protocol Building Steps</h3>
+            
+            <div class="step active" id="step1" onclick="executeStep(1)">
+                <h4>Step 1: Define Protocol</h4>
+                <p>Create the main protocol definition block and set basic information</p>
+            </div>
+            
+            <div class="step" id="step2" onclick="executeStep(2)">
+                <h4>Step 2: Define Variables</h4>
+                <p>Add sample and reagent variables for DNA extraction</p>
+            </div>
+            
+            <div class="step" id="step3" onclick="executeStep(3)">
+                <h4>Step 3: Sample Preparation</h4>
+                <p>Add preparation steps for the biological sample</p>
+            </div>
+            
+            <div class="step" id="step4" onclick="executeStep(4)">
+                <h4>Step 4: DNA Extraction</h4>
+                <p>Add lysis, washing, and elution steps</p>
+            </div>
+            
+            <div class="step" id="step5" onclick="executeStep(5)">
+                <h4>Step 5: Quality Control</h4>
+                <p>Add DNA quantification and quality assessment</p>
+            </div>
+            
+            <div class="step" id="step6" onclick="executeStep(6)">
+                <h4>Step 6: PCR Setup</h4>
+                <p>Define PCR reagents and master mix preparation</p>
+            </div>
+            
+            <div class="step" id="step7" onclick="executeStep(7)">
+                <h4>Step 7: Variable Operations</h4>
+                <p>Use get_variable and set_variable blocks to manage DNA concentration</p>
+            </div>
+            
+            <div class="step" id="step8" onclick="executeStep(8)">
+                <h4>Step 8: Parallel Processing</h4>
+                <p>Run PCR amplification and gel preparation in parallel</p>
+            </div>
+            
+            <div class="step" id="step9" onclick="executeStep(9)">
+                <h4>Step 9: Analysis</h4>
+                <p>Add result analysis and data interpretation</p>
+            </div>
+            
+            <div class="instruction-box">
+                <h5>💡 Current Instruction:</h5>
+                <div id="currentInstruction">Click on Step 1 to start building your protocol!</div>
+            </div>
+        </div>
+        
+        <!-- Center Panel: Blockly Workspace -->
+        <div class="blockly-panel">
+            <div class="controls">
+                <div>
+                    <span style="font-weight: bold;">DNA Extraction & PCR Protocol Builder</span>
+                </div>
+                <div>
+                    <button class="btn" onclick="previousStep()">⬅️ Previous</button>
+                    <button class="btn btn-success" onclick="nextStep()">Next ➡️</button>
+                    <button class="btn btn-warning" onclick="generateProtocol()">📄 Generate</button>
+                </div>
+            </div>
+            <div id="blocklyDiv" style="height: calc(100% - 60px); width: 100%;"></div>
+        </div>
+        
+        <!-- Right Panel: Output and Analysis -->
+        <div class="output-panel">
+            <h3>📊 Protocol Output</h3>
+            
+            <div class="output-section">
+                <h4>Current Variables:</h4>
+                <div id="variableList">
+                    <p style="color: #666; font-style: italic;">No variables defined yet</p>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <h4>Protocol Preview:</h4>
+                <div id="protocolPreview">
+                    <p style="color: #666; font-style: italic;">Protocol will appear here as you build it</p>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <h4>Generated Output:</h4>
+                <div id="generatedOutput">
+                    <p style="color: #666; font-style: italic;">Click "Generate" to see the final protocol</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="blocks/experiment_blocks.js"></script>
+    <script src="blocks/variable_blocks.js"></script>
+    <script src="blocks/control_blocks.js"></script>
+    <script src="blocks/specialized_equipment_blocks.js"></script>
+    <script src="blocks/standard_blockly_blocks.js"></script>
+    <script src="generators/python_generator.js"></script>
+    <script src="generators/readable_generator.js"></script>
+    <script src="generators/specialized_equipment_python.js"></script>
+    <script src="generators/specialized_equipment_readable.js"></script>
+    <script src="protocol_analyzer.js"></script>
+    
+    <script>
+        let workspace;
+        let currentStep = 1;
+        const totalSteps = 9;
+        let builtBlocks = [];
+        
+        const stepInstructions = {
+            1: "Drag a 'Protocol Definition' block from the 'Protocol Management' category. Set the name to 'DNA_Extraction_PCR' and description to 'DNA extraction followed by PCR amplification'.",
+            2: "Add 'Sample Variable' and 'Reagent Variable' blocks from 'Variables & Materials'. Define: tissue sample, lysis buffer, wash buffer, and elution buffer.",
+            3: "Add a 'Preparation Step' block from 'Basic Experiment Steps'. Set it to prepare the tissue sample for lysis.",
+            4: "Add 'Mixing Step', 'Incubation Step', 'Centrifuge Step', and 'Wash Step' blocks to simulate DNA extraction process.",
+            5: "Add 'Measurement Step' to quantify DNA concentration using spectrophotometry at 260nm wavelength.",
+            6: "Define PCR reagents using 'Reagent Variable' blocks: primers, polymerase, dNTPs. Add 'Preparation Step' for master mix.",
+            7: "Use 'Get Variable' to retrieve DNA concentration, then 'Set Variable' to calculate dilution factor. This demonstrates variable manipulation.",
+            8: "Add 'Parallel Steps' block from 'Control Flow'. Set up PCR amplification in one branch and gel preparation in another to run simultaneously.",
+            9: "Add 'Observation Step' to analyze PCR results and 'Protocol Output' to define final results."
+        };
+        
+        const toolbox = {
+            "kind": "categoryToolbox",
+            "contents": [
+                {
+                    "kind": "category",
+                    "name": "Variables & Materials",
+                    "colour": "#27ae60",
+                    "contents": [
+                        {"kind": "block", "type": "sample_variable"},
+                        {"kind": "block", "type": "reagent_variable"},
+                        {"kind": "block", "type": "parameter_variable"},
+                        {"kind": "block", "type": "get_variable"},
+                        {"kind": "block", "type": "set_variable"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Basic Experiment Steps",
+                    "colour": "#3498db",
+                    "contents": [
+                        {"kind": "block", "type": "preparation_step"},
+                        {"kind": "block", "type": "mixing_step"},
+                        {"kind": "block", "type": "incubation_step"},
+                        {"kind": "block", "type": "measurement_step"},
+                        {"kind": "block", "type": "transfer_step"},
+                        {"kind": "block", "type": "centrifuge_step"},
+                        {"kind": "block", "type": "wash_step"},
+                        {"kind": "block", "type": "observation_step"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "🔬 Advanced Instrumentation",
+                    "colour": "#e74c3c",
+                    "contents": [
+                        {"kind": "block", "type": "qpcr_system"},
+                        {"kind": "block", "type": "mass_spectrometer"},
+                        {"kind": "block", "type": "flow_cytometer"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Control Flow",
+                    "colour": "#9b59b6",
+                    "contents": [
+                        {"kind": "block", "type": "controls_if"},
+                        {"kind": "block", "type": "controls_repeat_ext"},
+                        {"kind": "block", "type": "parallel_steps"},
+                        {"kind": "block", "type": "protocol_sequence"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Logic & Math",
+                    "colour": "#e67e22",
+                    "contents": [
+                        {"kind": "block", "type": "math_number"},
+                        {"kind": "block", "type": "text"},
+                        {"kind": "block", "type": "logic_boolean"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Protocol Management",
+                    "colour": "#f39c12",
+                    "contents": [
+                        {"kind": "block", "type": "protocol_definition"},
+                        {"kind": "block", "type": "protocol_input"},
+                        {"kind": "block", "type": "protocol_output"}
+                    ]
+                }
+            ]
+        };
+        
+        // Initialize workspace
+        document.addEventListener('DOMContentLoaded', function() {
+            workspace = Blockly.inject('blocklyDiv', {
+                toolbox: toolbox,
+                grid: {spacing: 20, length: 3, colour: '#ccc', snap: true},
+                zoom: {controls: true, wheel: true, startScale: 0.8},
+                trashcan: true,
+                sounds: false
+            });
+            
+            workspace.addChangeListener(updatePreview);
+            updateInstruction();
+        });
+        
+        function executeStep(stepNumber) {
+            if (stepNumber <= currentStep || stepNumber === currentStep + 1) {
+                currentStep = stepNumber;
+                updateStepVisuals();
+                updateInstruction();
+                
+                // Auto-build blocks for demonstration
+                if (stepNumber <= builtBlocks.length + 1) {
+                    autoBuildStep(stepNumber);
+                }
+            }
+        }
+        
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                executeStep(currentStep + 1);
+            }
+        }
+        
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepVisuals();
+                updateInstruction();
+            }
+        }
+        
+        function updateStepVisuals() {
+            // Update step appearances
+            for (let i = 1; i <= totalSteps; i++) {
+                const stepElement = document.getElementById(`step${i}`);
+                stepElement.classList.remove('active', 'completed');
+                
+                if (i === currentStep) {
+                    stepElement.classList.add('active');
+                } else if (i < currentStep) {
+                    stepElement.classList.add('completed');
+                }
+            }
+            
+            // Update progress bar
+            const progress = (currentStep - 1) / (totalSteps - 1) * 100;
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = `${progress}%`;
+            progressBar.textContent = `${Math.round(progress)}% Complete`;
+        }
+        
+        function updateInstruction() {
+            const instructionElement = document.getElementById('currentInstruction');
+            instructionElement.textContent = stepInstructions[currentStep];
+        }
+        
+        function autoBuildStep(stepNumber) {
+            if (builtBlocks.includes(stepNumber)) return;
+            
+            let xmlText = '';
+            
+            switch (stepNumber) {
+                case 1:
+                    xmlText = `
+                    <xml xmlns="https://developers.google.com/blockly/xml">
+                        <block type="protocol_definition" x="20" y="20">
+                            <field name="PROTOCOL_NAME">DNA_Extraction_PCR</field>
+                            <field name="DESCRIPTION">DNA extraction followed by PCR amplification</field>
+                        </block>
+                    </xml>`;
+                    break;
+                    
+                case 2:
+                    xmlText = `
+                    <xml xmlns="https://developers.google.com/blockly/xml">
+                        <block type="protocol_definition" x="20" y="20">
+                            <field name="PROTOCOL_NAME">DNA_Extraction_PCR</field>
+                            <field name="DESCRIPTION">DNA extraction followed by PCR amplification</field>
+                            <statement name="STEPS">
+                                <block type="sample_variable">
+                                    <field name="NAME">tissue_sample</field>
+                                    <field name="TYPE">TISSUE</field>
+                                    <field name="DESCRIPTION">Fresh tissue sample for DNA extraction</field>
+                                    <value name="VOLUME">
+                                        <block type="math_number"><field name="NUM">100</field></block>
+                                    </value>
+                                    <next>
+                                        <block type="reagent_variable">
+                                            <field name="NAME">lysis_buffer</field>
+                                            <field name="UNITS">mM</field>
+                                            <field name="STORAGE">RT</field>
+                                            <field name="DESCRIPTION">Cell lysis buffer with protease</field>
+                                            <value name="CONCENTRATION">
+                                                <block type="math_number"><field name="NUM">50</field></block>
+                                            </value>
+                                            <value name="VOLUME">
+                                                <block type="math_number"><field name="NUM">500</field></block>
+                                            </value>
+                                        </block>
+                                    </next>
+                                </block>
+                            </statement>
+                        </block>
+                    </xml>`;
+                    break;
+                    
+                case 3:
+                    xmlText = `
+                    <xml xmlns="https://developers.google.com/blockly/xml">
+                        <block type="protocol_definition" x="20" y="20">
+                            <field name="PROTOCOL_NAME">DNA_Extraction_PCR</field>
+                            <field name="DESCRIPTION">DNA extraction followed by PCR amplification</field>
+                            <statement name="STEPS">
+                                <block type="sample_variable">
+                                    <field name="NAME">tissue_sample</field>
+                                    <field name="TYPE">TISSUE</field>
+                                    <field name="DESCRIPTION">Fresh tissue sample for DNA extraction</field>
+                                    <value name="VOLUME">
+                                        <block type="math_number"><field name="NUM">100</field></block>
+                                    </value>
+                                    <next>
+                                        <block type="reagent_variable">
+                                            <field name="NAME">lysis_buffer</field>
+                                            <field name="UNITS">mM</field>
+                                            <field name="STORAGE">RT</field>
+                                            <field name="DESCRIPTION">Cell lysis buffer with protease</field>
+                                            <value name="CONCENTRATION">
+                                                <block type="math_number"><field name="NUM">50</field></block>
+                                            </value>
+                                            <value name="VOLUME">
+                                                <block type="math_number"><field name="NUM">500</field></block>
+                                            </value>
+                                            <next>
+                                                <block type="preparation_step">
+                                                    <field name="WHAT">tissue sample</field>
+                                                    <field name="METHOD">homogenization</field>
+                                                </block>
+                                            </next>
+                                        </block>
+                                    </next>
+                                </block>
+                            </statement>
+                        </block>
+                    </xml>`;
+                    break;
+                    
+                case 4:
+                    // Add DNA extraction steps
+                    const currentXml = Blockly.Xml.workspaceToDom(workspace);
+                    const preparationBlock = workspace.getBlocksByType('preparation_step')[0];
+                    if (preparationBlock) {
+                        const mixingBlock = workspace.newBlock('mixing_step');
+                        mixingBlock.setFieldValue('tissue with lysis buffer', 'COMPONENTS');
+                        mixingBlock.setFieldValue('VORTEX', 'METHOD');
+                        preparationBlock.nextConnection.connect(mixingBlock.previousConnection);
+                        
+                        const incubationBlock = workspace.newBlock('incubation_step');
+                        incubationBlock.setFieldValue('lysed sample', 'SAMPLE');
+                        incubationBlock.setFieldValue('STATIC', 'CONDITIONS');
+                        mixingBlock.nextConnection.connect(incubationBlock.previousConnection);
+                    }
+                    break;
+                    
+                case 5:
+                    // Add measurement step
+                    const blocks = workspace.getAllBlocks();
+                    const lastBlock = blocks[blocks.length - 1];
+                    if (lastBlock && lastBlock.nextConnection) {
+                        const measurementBlock = workspace.newBlock('measurement_step');
+                        measurementBlock.setFieldValue('ABSORBANCE', 'MEASUREMENT_TYPE');
+                        measurementBlock.setFieldValue('dna_concentration', 'RESULT_VAR');
+                        lastBlock.nextConnection.connect(measurementBlock.previousConnection);
+                    }
+                    break;
+                    
+                case 6:
+                    // Add PCR reagents
+                    const allBlocks = workspace.getAllBlocks();
+                    const lastCurrentBlock = allBlocks[allBlocks.length - 1];
+                    if (lastCurrentBlock && lastCurrentBlock.nextConnection) {
+                        const reagentBlock = workspace.newBlock('reagent_variable');
+                        reagentBlock.setFieldValue('pcr_master_mix', 'NAME');
+                        reagentBlock.setFieldValue('Contains Taq polymerase, dNTPs, buffer', 'DESCRIPTION');
+                        lastCurrentBlock.nextConnection.connect(reagentBlock.previousConnection);
+                    }
+                    break;
+                    
+                case 7:
+                    // Add variable manipulation (get_variable and set_variable)
+                    const blocks7 = workspace.getAllBlocks();
+                    const lastBlock7 = blocks7[blocks7.length - 1];
+                    if (lastBlock7 && lastBlock7.nextConnection) {
+                        // Add get_variable block
+                        const getVarBlock = workspace.newBlock('get_variable');
+                        getVarBlock.setFieldValue('dna_concentration', 'VAR_NAME');
+                        lastBlock7.nextConnection.connect(getVarBlock.previousConnection);
+                        
+                        // Add set_variable block
+                        const setVarBlock = workspace.newBlock('set_variable');
+                        setVarBlock.setFieldValue('dilution_factor', 'VAR_NAME');
+                        // Connect a math block for calculation
+                        const mathBlock = workspace.newBlock('math_number');
+                        mathBlock.setFieldValue('2', 'NUM');
+                        setVarBlock.getInput('VALUE').connection.connect(mathBlock.outputConnection);
+                        getVarBlock.nextConnection.connect(setVarBlock.previousConnection);
+                    }
+                    break;
+                    
+                case 8:
+                    // Add parallel steps
+                    const blocks8 = workspace.getAllBlocks();
+                    const lastBlock8 = blocks8[blocks8.length - 1];
+                    if (lastBlock8 && lastBlock8.nextConnection) {
+                        const parallelBlock = workspace.newBlock('parallel_steps');
+                        lastBlock8.nextConnection.connect(parallelBlock.previousConnection);
+                        
+                        // Add qPCR in branch 1
+                        const qpcrBlock = workspace.newBlock('qpcr_system');
+                        qpcrBlock.setFieldValue('CFX96', 'SYSTEM');
+                        qpcrBlock.setFieldValue('SYBR', 'CHEMISTRY');
+                        qpcrBlock.setFieldValue('qpcr_results', 'RESULT_VAR');
+                        parallelBlock.getInput('BRANCH1').connection.connect(qpcrBlock.previousConnection);
+                        
+                        // Add gel preparation in branch 2
+                        const prepBlock = workspace.newBlock('preparation_step');
+                        prepBlock.setFieldValue('agarose gel', 'WHAT');
+                        prepBlock.setFieldValue('gel casting', 'METHOD');
+                        parallelBlock.getInput('BRANCH2').connection.connect(prepBlock.previousConnection);
+                    }
+                    break;
+                    
+                case 9:
+                    // Add analysis step
+                    const finalBlocks = workspace.getAllBlocks();
+                    const finalBlock = finalBlocks[finalBlocks.length - 1];
+                    if (finalBlock && finalBlock.nextConnection) {
+                        const observationBlock = workspace.newBlock('observation_step');
+                        observationBlock.setFieldValue('PCR products', 'SAMPLE');
+                        observationBlock.setFieldValue('amplification curves and Ct values', 'OBSERVATION');
+                        observationBlock.setFieldValue('final_results', 'RECORD_VAR');
+                        finalBlock.nextConnection.connect(observationBlock.previousConnection);
+                    }
+                    break;
+            }
+            
+            if (xmlText && stepNumber <= 3) {
+                workspace.clear();
+                const xml = Blockly.Xml.textToDom(xmlText);
+                Blockly.Xml.domToWorkspace(xml, workspace);
+            }
+            
+            builtBlocks.push(stepNumber);
+            updatePreview();
+        }
+        
+        function updatePreview() {
+            updateVariableList();
+            updateProtocolPreview();
+        }
+        
+        function updateVariableList() {
+            const variableListElement = document.getElementById('variableList');
+            const sampleBlocks = workspace.getBlocksByType('sample_variable');
+            const reagentBlocks = workspace.getBlocksByType('reagent_variable');
+            
+            let html = '';
+            
+            sampleBlocks.forEach(block => {
+                const name = block.getFieldValue('NAME');
+                const type = block.getFieldValue('TYPE');
+                html += `<div class="variable-preview">📋 Sample: ${name} (${type})</div>`;
+            });
+            
+            reagentBlocks.forEach(block => {
+                const name = block.getFieldValue('NAME');
+                const concentration = block.inputList.find(input => input.name === 'CONCENTRATION');
+                html += `<div class="variable-preview">🧪 Reagent: ${name}</div>`;
+            });
+            
+            if (!html) {
+                html = '<p style="color: #666; font-style: italic;">No variables defined yet</p>';
+            }
+            
+            variableListElement.innerHTML = html;
+        }
+        
+        function updateProtocolPreview() {
+            const previewElement = document.getElementById('protocolPreview');
+            const stepBlocks = workspace.getAllBlocks().filter(block => 
+                ['preparation_step', 'mixing_step', 'incubation_step', 'measurement_step', 'qpcr_system', 'observation_step', 'get_variable', 'set_variable', 'parallel_steps'].includes(block.type)
+            );
+            
+            let html = '';
+            stepBlocks.forEach((block, index) => {
+                let stepName = block.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
+                // Add specific details for certain blocks
+                if (block.type === 'get_variable') {
+                    const varName = block.getFieldValue('VAR_NAME');
+                    stepName += ` (${varName})`;
+                } else if (block.type === 'set_variable') {
+                    const varName = block.getFieldValue('VAR_NAME');
+                    stepName += ` (${varName})`;
+                } else if (block.type === 'parallel_steps') {
+                    stepName = 'Parallel Execution (Multiple branches)';
+                }
+                
+                html += `<div class="variable-preview">${index + 1}. ${stepName}</div>`;
+            });
+            
+            if (!html) {
+                html = '<p style="color: #666; font-style: italic;">No steps added yet</p>';
+            }
+            
+            previewElement.innerHTML = html;
+        }
+        
+        function generateProtocol() {
+            try {
+                const readableCode = ReadableGenerator.workspaceToCode(workspace);
+                const pythonCode = PythonGenerator.workspaceToCode(workspace);
+                
+                const outputElement = document.getElementById('generatedOutput');
+                outputElement.innerHTML = `
+                    <h5>📄 Readable Protocol:</h5>
+                    <pre style="max-height: 200px;">${readableCode.substring(0, 1000)}${readableCode.length > 1000 ? '...' : ''}</pre>
+                    <h5>🐍 Python Code:</h5>
+                    <pre style="max-height: 200px;">${pythonCode.substring(0, 1000)}${pythonCode.length > 1000 ? '...' : ''}</pre>
+                `;
+                
+                showMessage('Protocol generated successfully! 🎉', 'success');
+            } catch (error) {
+                showMessage('Error generating protocol: ' + error.message, 'error');
+            }
+        }
+        
+        function showMessage(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 6px;
+                color: white;
+                font-weight: bold;
+                z-index: 1000;
+                min-width: 300px;
+                background: ${type === 'success' ? '#27ae60' : '#e74c3c'};
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+    </script>
+</body>
+</html>

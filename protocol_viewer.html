@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Protocol Viewer</title>
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .protocol-info {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 2rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+            margin: 1rem;
+            height: calc(100vh - 200px);
+        }
+        
+        .workspace-panel {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .workspace-header {
+            background: #34495e;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .info-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-y: auto;
+        }
+        
+        .section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin: 0.25rem;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #229954; }
+        .btn-warning { background: #f39c12; }
+        .btn-warning:hover { background: #e67e22; }
+        
+        .tag {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin: 0.1rem;
+        }
+        
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .metadata-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 3px solid #3498db;
+        }
+        
+        .metadata-label {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metadata-value {
+            color: #666;
+        }
+        
+        .analysis-summary {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+        
+        .step-count {
+            font-size: 2em;
+            font-weight: bold;
+            color: #27ae60;
+            text-align: center;
+        }
+        
+        .warning-item {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            color: #856404;
+        }
+        
+        .variable-item {
+            background: #e3f2fd;
+            border-left: 3px solid #2196f3;
+            padding: 0.5rem;
+            margin: 0.3rem 0;
+            border-radius: 4px;
+        }
+        
+        .readonly-indicator {
+            background: #ffeaa7;
+            color: #2d3436;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .shared-indicator {
+            background: #74b9ff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <span>👁️ Protocol Viewer</span>
+        </h1>
+        <div class="protocol-info" id="protocolInfo">
+            <div>
+                <h2 id="protocolName">Loading protocol...</h2>
+                <p id="protocolDescription">Please wait while the protocol loads.</p>
+            </div>
+            <div id="protocolStatus"></div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Workspace Panel -->
+        <div class="workspace-panel">
+            <div class="workspace-header">
+                <h3>📋 Protocol Workspace</h3>
+                <div>
+                    <button class="btn" onclick="zoomIn()">🔍+</button>
+                    <button class="btn" onclick="zoomOut()">🔍-</button>
+                    <button class="btn" onclick="resetZoom()">↻ Reset</button>
+                    <button class="btn btn-success" onclick="editProtocol()">✏️ Edit</button>
+                </div>
+            </div>
+            <div id="blocklyDiv" style="height: calc(100% - 60px); width: 100%;"></div>
+        </div>
+        
+        <!-- Information Panel -->
+        <div class="info-panel">
+            <div class="section">
+                <h3>📊 Protocol Information</h3>
+                <div class="metadata-grid" id="metadataGrid">
+                    <!-- Metadata will be populated here -->
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3>🔍 Protocol Analysis</h3>
+                <div id="analysisContent">
+                    <p style="color: #666; text-align: center;">Analyzing protocol...</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3>⚙️ Actions</h3>
+                <button class="btn btn-success" onclick="editProtocol()">✏️ Edit Protocol</button>
+                <button class="btn" onclick="duplicateProtocol()">📋 Duplicate</button>
+                <button class="btn btn-warning" onclick="exportProtocol()">📤 Export</button>
+                <button class="btn" onclick="openProtocolManager()">📁 Manager</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="blocks/experiment_blocks.js"></script>
+    <script src="blocks/variable_blocks.js"></script>
+    <script src="blocks/control_blocks.js"></script>
+    <script src="blocks/specialized_equipment_blocks.js"></script>
+    <script src="blocks/standard_blockly_blocks.js"></script>
+    <script src="generators/python_generator.js"></script>
+    <script src="generators/readable_generator.js"></script>
+    <script src="generators/specialized_equipment_python.js"></script>
+    <script src="generators/specialized_equipment_readable.js"></script>
+    <script src="protocol_analyzer.js"></script>
+    <script src="protocol_storage.js"></script>
+    
+    <script>
+        let workspace;
+        let currentProtocol = null;
+        
+        // Minimal toolbox for viewing (read-only)
+        const viewerToolbox = {
+            "kind": "categoryToolbox",
+            "contents": [
+                {
+                    "kind": "category",
+                    "name": "ℹ️ Viewer Mode",
+                    "colour": "#95a5a6",
+                    "contents": []
+                }
+            ]
+        };
+        
+        // Initialize viewer
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Blockly workspace in read-only mode
+            workspace = Blockly.inject('blocklyDiv', {
+                toolbox: viewerToolbox,
+                readOnly: true,
+                grid: {spacing: 20, length: 3, colour: '#ccc', snap: true},
+                zoom: {controls: false, wheel: true, startScale: 0.8},
+                trashcan: false,
+                sounds: false
+            });
+            
+            // Load protocol from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const protocolId = urlParams.get('protocol');
+            
+            if (protocolId) {
+                loadProtocol(protocolId);
+            } else {
+                showError('No protocol specified in URL');
+            }
+        });
+        
+        // Load and display protocol
+        function loadProtocol(protocolId) {
+            try {
+                currentProtocol = protocolStorage.loadProtocol(protocolId);
+                displayProtocolInfo(currentProtocol);
+                loadProtocolWorkspace(currentProtocol);
+                analyzeProtocol(currentProtocol);
+                
+            } catch (error) {
+                showError('Error loading protocol: ' + error.message);
+            }
+        }
+        
+        // Display protocol information
+        function displayProtocolInfo(protocol) {
+            document.getElementById('protocolName').textContent = protocol.name;
+            document.getElementById('protocolDescription').textContent = protocol.description || 'No description provided';
+            
+            // Status indicators
+            const statusDiv = document.getElementById('protocolStatus');
+            let statusHTML = '';
+            
+            if (protocol.readonly) {
+                statusHTML += '<div class="readonly-indicator">🔒 Read-only</div>';
+            }
+            if (protocol.shared) {
+                statusHTML += '<div class="shared-indicator">🌐 Shared</div>';
+            }
+            
+            statusDiv.innerHTML = statusHTML;
+            
+            // Metadata grid
+            const metadataGrid = document.getElementById('metadataGrid');
+            metadataGrid.innerHTML = `
+                <div class="metadata-item">
+                    <div class="metadata-label">Author</div>
+                    <div class="metadata-value">${protocol.author}</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Category</div>
+                    <div class="metadata-value">${protocol.category}</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Version</div>
+                    <div class="metadata-value">${protocol.version}</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Created</div>
+                    <div class="metadata-value">${formatDate(protocol.created)}</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Modified</div>
+                    <div class="metadata-value">${formatDate(protocol.modified)}</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Tags</div>
+                    <div class="metadata-value">
+                        ${protocol.tags && protocol.tags.length > 0 ? 
+                            protocol.tags.map(tag => `<span class="tag">${tag}</span>`).join('') : 
+                            'No tags'
+                        }
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Load protocol into workspace
+        function loadProtocolWorkspace(protocol) {
+            try {
+                if (protocol.workspace_xml) {
+                    const xml = Blockly.Xml.textToDom(protocol.workspace_xml);
+                    Blockly.Xml.clearWorkspaceAndLoadFromXml(xml, workspace);
+                } else {
+                    showError('No workspace data found in protocol');
+                }
+            } catch (error) {
+                showError('Error loading workspace: ' + error.message);
+            }
+        }
+        
+        // Analyze and display protocol
+        function analyzeProtocol(protocol) {
+            try {
+                let analysis = protocol.analysis;
+                
+                // If no stored analysis, generate it
+                if (!analysis) {
+                    analysis = ProtocolAnalyzer.analyze(workspace);
+                }
+                
+                displayAnalysis(analysis);
+                
+            } catch (error) {
+                document.getElementById('analysisContent').innerHTML = 
+                    `<p style="color: #e74c3c;">Error analyzing protocol: ${error.message}</p>`;
+            }
+        }
+        
+        // Display protocol analysis
+        function displayAnalysis(analysis) {
+            const analysisContent = document.getElementById('analysisContent');
+            
+            let html = `
+                <div class="analysis-summary">
+                    <div class="step-count">${analysis.stepCount}</div>
+                    <div style="text-align: center; color: #27ae60; font-weight: bold;">Protocol Steps</div>
+                </div>
+            `;
+            
+            // Inputs
+            html += '<h5>📥 Inputs:</h5>';
+            if (analysis.inputs && analysis.inputs.length > 0) {
+                analysis.inputs.forEach(input => {
+                    html += `<div class="variable-item">
+                        <strong>${input.name}</strong> (${input.type})
+                        ${input.description ? `<br><small>${input.description}</small>` : ''}
+                    </div>`;
+                });
+            } else {
+                html += '<p style="color: #666;">No inputs defined</p>';
+            }
+            
+            // Intermediates
+            if (analysis.intermediates && analysis.intermediates.length > 0) {
+                html += '<h5>⚙️ Intermediate Variables:</h5>';
+                analysis.intermediates.forEach(intermediate => {
+                    html += `<div class="variable-item">
+                        <strong>${intermediate.name}</strong> (${intermediate.type})
+                        ${intermediate.description ? `<br><small>${intermediate.description}</small>` : ''}
+                    </div>`;
+                });
+            }
+            
+            // Outputs
+            html += '<h5>📤 Outputs:</h5>';
+            if (analysis.outputs && analysis.outputs.length > 0) {
+                analysis.outputs.forEach(output => {
+                    html += `<div class="variable-item">
+                        <strong>${output.name}</strong> (${output.type})
+                        ${output.description ? `<br><small>${output.description}</small>` : ''}
+                    </div>`;
+                });
+            } else {
+                html += '<p style="color: #666;">No outputs defined</p>';
+            }
+            
+            // Control flow
+            if (analysis.controlFlow && analysis.controlFlow.length > 0) {
+                html += '<h5>🔄 Control Flow:</h5>';
+                analysis.controlFlow.forEach(flow => {
+                    html += `<div class="variable-item">${flow}</div>`;
+                });
+            }
+            
+            // Warnings
+            if (analysis.warnings && analysis.warnings.length > 0) {
+                html += '<h5>⚠️ Warnings:</h5>';
+                analysis.warnings.forEach(warning => {
+                    html += `<div class="warning-item">${warning}</div>`;
+                });
+            }
+            
+            analysisContent.innerHTML = html;
+        }
+        
+        // Workspace controls
+        function zoomIn() {
+            workspace.zoomCenter(1.2);
+        }
+        
+        function zoomOut() {
+            workspace.zoomCenter(0.8);
+        }
+        
+        function resetZoom() {
+            workspace.setScale(0.8);
+            workspace.scrollCenter();
+        }
+        
+        // Action functions
+        function editProtocol() {
+            if (currentProtocol) {
+                const editURL = `demo.html?loadProtocol=${currentProtocol.id}`;
+                window.open(editURL, '_blank');
+            }
+        }
+        
+        function duplicateProtocol() {
+            if (currentProtocol) {
+                try {
+                    const newName = prompt('Enter name for the duplicated protocol:', 
+                                         currentProtocol.name + ' (Copy)');
+                    if (newName) {
+                        const newId = protocolStorage.duplicateProtocol(currentProtocol.id, newName);
+                        alert('Protocol duplicated successfully!');
+                        
+                        // Optionally open the duplicated protocol
+                        const editURL = `demo.html?loadProtocol=${newId}`;
+                        window.open(editURL, '_blank');
+                    }
+                } catch (error) {
+                    alert('Error duplicating protocol: ' + error.message);
+                }
+            }
+        }
+        
+        function exportProtocol() {
+            if (currentProtocol) {
+                try {
+                    protocolStorage.exportProtocol(currentProtocol.id);
+                    alert('Protocol exported successfully!');
+                } catch (error) {
+                    alert('Error exporting protocol: ' + error.message);
+                }
+            }
+        }
+        
+        function openProtocolManager() {
+            window.open('protocol_manager_ui.html', '_blank', 'width=1400,height=800');
+        }
+        
+        // Utility functions
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString();
+        }
+        
+        function showError(message) {
+            document.getElementById('protocolName').textContent = 'Error';
+            document.getElementById('protocolDescription').textContent = message;
+            document.getElementById('protocolDescription').style.color = '#e74c3c';
+        }
+    </script>
+</body>
+</html>

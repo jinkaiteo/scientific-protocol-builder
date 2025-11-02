@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Protocol Builder Test</title>
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .test-container {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-result {
+            background-color: #e8f5e8;
+            border: 1px solid #4caf50;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .test-error {
+            background-color: #ffeaea;
+            border: 1px solid #f44336;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            color: #d32f2f;
+        }
+        
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            border: 1px solid #e9ecef;
+            font-size: 12px;
+        }
+        
+        button {
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background-color: #1976d2;
+        }
+        
+        h2 {
+            color: #1976d2;
+            border-bottom: 2px solid #1976d2;
+            padding-bottom: 5px;
+        }
+        
+        .demo-workspace {
+            height: 400px;
+            border: 1px solid #ccc;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Scientific Protocol Builder - System Test</h1>
+    
+    <div class="test-container">
+        <h2>Demo Workspace</h2>
+        <div id="demoWorkspace" class="demo-workspace"></div>
+        <button onclick="loadDemoProtocol()">Load Demo Protocol</button>
+        <button onclick="testAllGenerators()">Test All Generators</button>
+        <button onclick="testAnalyzer()">Test Protocol Analyzer</button>
+    </div>
+    
+    <div class="test-container">
+        <h2>Test Results</h2>
+        <div id="testResults">Click buttons above to run tests...</div>
+    </div>
+    
+    <script src="blocks/experiment_blocks.js"></script>
+    <script src="blocks/variable_blocks.js"></script>
+    <script src="blocks/control_blocks.js"></script>
+    <script src="generators/python_generator.js"></script>
+    <script src="generators/readable_generator.js"></script>
+    <script src="protocol_analyzer.js"></script>
+    
+    <script>
+        let workspace;
+        
+        // Initialize demo workspace
+        document.addEventListener('DOMContentLoaded', function() {
+            const toolbox = {
+                "kind": "categoryToolbox",
+                "contents": [
+                    {
+                        "kind": "category",
+                        "name": "Variables",
+                        "colour": "#5ba55b",
+                        "contents": [
+                            {"kind": "block", "type": "sample_variable"},
+                            {"kind": "block", "type": "reagent_variable"},
+                            {"kind": "block", "type": "parameter_variable"}
+                        ]
+                    },
+                    {
+                        "kind": "category",
+                        "name": "Steps",
+                        "colour": "#5ba5db",
+                        "contents": [
+                            {"kind": "block", "type": "preparation_step"},
+                            {"kind": "block", "type": "mixing_step"},
+                            {"kind": "block", "type": "measurement_step"}
+                        ]
+                    },
+                    {
+                        "kind": "category",
+                        "name": "Basic",
+                        "colour": "#5b67a5",
+                        "contents": [
+                            {"kind": "block", "type": "math_number"},
+                            {"kind": "block", "type": "text"}
+                        ]
+                    }
+                ]
+            };
+            
+            workspace = Blockly.inject('demoWorkspace', {
+                toolbox: toolbox,
+                grid: {spacing: 20, length: 3, colour: '#ccc', snap: true},
+                zoom: {controls: true, wheel: true, startScale: 0.8},
+                trashcan: true
+            });
+        });
+        
+        function loadDemoProtocol() {
+            try {
+                // Clear workspace
+                workspace.clear();
+                
+                // Create a simple demo protocol
+                const xmlText = `
+                <xml xmlns="https://developers.google.com/blockly/xml">
+                    <block type="protocol_definition" x="20" y="20">
+                        <field name="PROTOCOL_NAME">Simple_PCR</field>
+                        <field name="DESCRIPTION">Basic PCR amplification</field>
+                        <statement name="INPUTS">
+                            <block type="protocol_input">
+                                <field name="INPUT_NAME">template_dna</field>
+                                <field name="INPUT_TYPE">sample</field>
+                                <field name="REQUIRED">TRUE</field>
+                                <field name="DESCRIPTION">Template DNA sample</field>
+                            </block>
+                        </statement>
+                        <statement name="STEPS">
+                            <block type="sample_variable">
+                                <field name="NAME">dna_sample</field>
+                                <field name="TYPE">DNA</field>
+                                <field name="DESCRIPTION">Template DNA for PCR</field>
+                                <value name="VOLUME">
+                                    <block type="math_number">
+                                        <field name="NUM">10</field>
+                                    </block>
+                                </value>
+                                <next>
+                                    <block type="reagent_variable">
+                                        <field name="NAME">taq_polymerase</field>
+                                        <field name="UNITS">U/μL</field>
+                                        <field name="STORAGE">-20C</field>
+                                        <field name="DESCRIPTION">DNA polymerase enzyme</field>
+                                        <value name="CONCENTRATION">
+                                            <block type="math_number">
+                                                <field name="NUM">5</field>
+                                            </block>
+                                        </value>
+                                        <next>
+                                            <block type="preparation_step">
+                                                <field name="WHAT">PCR master mix</field>
+                                                <field name="METHOD">pipetting</field>
+                                                <next>
+                                                    <block type="mixing_step">
+                                                        <field name="COMPONENTS">PCR components</field>
+                                                        <field name="METHOD">PIPETTE</field>
+                                                        <value name="VOLUME">
+                                                            <block type="math_number">
+                                                                <field name="NUM">50</field>
+                                                            </block>
+                                                        </value>
+                                                        <value name="TIME">
+                                                            <block type="math_number">
+                                                                <field name="NUM">1</field>
+                                                            </block>
+                                                        </value>
+                                                        <next>
+                                                            <block type="measurement_step">
+                                                                <field name="MEASUREMENT_TYPE">ABSORBANCE</field>
+                                                                <field name="RESULT_VAR">final_concentration</field>
+                                                                <value name="WAVELENGTH">
+                                                                    <block type="math_number">
+                                                                        <field name="NUM">260</field>
+                                                                    </block>
+                                                                </value>
+                                                            </block>
+                                                        </next>
+                                                    </block>
+                                                </next>
+                                            </block>
+                                        </next>
+                                    </block>
+                                </next>
+                            </block>
+                        </statement>
+                        <statement name="OUTPUTS">
+                            <block type="protocol_output">
+                                <field name="OUTPUT_NAME">amplified_product</field>
+                                <field name="OUTPUT_TYPE">sample</field>
+                                <field name="DESCRIPTION">PCR amplified DNA</field>
+                            </block>
+                        </statement>
+                    </block>
+                </xml>`;
+                
+                const xml = Blockly.Xml.textToDom(xmlText);
+                Blockly.Xml.domToWorkspace(xml, workspace);
+                
+                showResult("Demo protocol loaded successfully!", "success");
+                
+            } catch (error) {
+                showResult("Error loading demo protocol: " + error.message, "error");
+            }
+        }
+        
+        function testAllGenerators() {
+            try {
+                const results = [];
+                
+                // Test Python generator
+                try {
+                    const pythonCode = PythonGenerator.workspaceToCode(workspace);
+                    results.push({
+                        generator: "Python",
+                        success: true,
+                        code: pythonCode,
+                        length: pythonCode.length
+                    });
+                } catch (error) {
+                    results.push({
+                        generator: "Python",
+                        success: false,
+                        error: error.message
+                    });
+                }
+                
+                // Test Readable generator
+                try {
+                    const readableCode = ReadableGenerator.workspaceToCode(workspace);
+                    results.push({
+                        generator: "Readable",
+                        success: true,
+                        code: readableCode,
+                        length: readableCode.length
+                    });
+                } catch (error) {
+                    results.push({
+                        generator: "Readable",
+                        success: false,
+                        error: error.message
+                    });
+                }
+                
+                // Display results
+                let html = "<h3>Generator Test Results</h3>";
+                results.forEach(result => {
+                    if (result.success) {
+                        html += `<div class="test-result">
+                            <h4>${result.generator} Generator: ✓ Success</h4>
+                            <p>Generated ${result.length} characters</p>
+                            <details>
+                                <summary>View Generated Code</summary>
+                                <pre>${result.code}</pre>
+                            </details>
+                        </div>`;
+                    } else {
+                        html += `<div class="test-error">
+                            <h4>${result.generator} Generator: ✗ Failed</h4>
+                            <p>Error: ${result.error}</p>
+                        </div>`;
+                    }
+                });
+                
+                document.getElementById('testResults').innerHTML = html;
+                
+            } catch (error) {
+                showResult("Error testing generators: " + error.message, "error");
+            }
+        }
+        
+        function testAnalyzer() {
+            try {
+                const analysis = ProtocolAnalyzer.analyze(workspace);
+                
+                let html = "<h3>Protocol Analysis Results</h3>";
+                html += `<div class="test-result">
+                    <h4>Analysis Complete ✓</h4>
+                    <ul>
+                        <li><strong>Steps:</strong> ${analysis.stepCount}</li>
+                        <li><strong>Inputs:</strong> ${analysis.inputs.length}</li>
+                        <li><strong>Intermediates:</strong> ${analysis.intermediates.length}</li>
+                        <li><strong>Outputs:</strong> ${analysis.outputs.length}</li>
+                        <li><strong>Control Flow:</strong> ${analysis.controlFlow.length} structures</li>
+                        <li><strong>Warnings:</strong> ${analysis.warnings.length}</li>
+                    </ul>
+                    
+                    <details>
+                        <summary>View Full Analysis</summary>
+                        <pre>${JSON.stringify(analysis, null, 2)}</pre>
+                    </details>
+                </div>`;
+                
+                if (analysis.warnings.length > 0) {
+                    html += '<div class="test-error"><h4>Warnings:</h4><ul>';
+                    analysis.warnings.forEach(warning => {
+                        html += `<li>${warning}</li>`;
+                    });
+                    html += '</ul></div>';
+                }
+                
+                document.getElementById('testResults').innerHTML = html;
+                
+            } catch (error) {
+                showResult("Error running analyzer: " + error.message, "error");
+            }
+        }
+        
+        function showResult(message, type) {
+            const className = type === "success" ? "test-result" : "test-error";
+            document.getElementById('testResults').innerHTML = 
+                `<div class="${className}">${message}</div>`;
+        }
+    </script>
+</body>
+</html>

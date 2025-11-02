@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Instrument Enrollment Interface</title>
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem;
+            height: calc(100vh - 200px);
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-y: auto;
+        }
+        
+        .panel h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #34495e;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ecf0f1;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin: 0.25rem;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #229954; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-warning { background: #f39c12; }
+        .btn-warning:hover { background: #e67e22; }
+        
+        .instrument-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ecf0f1;
+            border-radius: 6px;
+            padding: 1rem;
+        }
+        
+        .instrument-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .instrument-info h4 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        
+        .instrument-info p {
+            margin: 0.25rem 0 0 0;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        .parameter-input {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+            margin-bottom: 0.5rem;
+        }
+        
+        .parameter-input input {
+            flex: 1;
+        }
+        
+        .parameter-input button {
+            padding: 0.5rem;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .parameter-list {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .parameter-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            background: white;
+            border-radius: 4px;
+        }
+        
+        .alert {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+        
+        .alert-success {
+            background: #d5f4e6;
+            border-color: #27ae60;
+            color: #1e8449;
+        }
+        
+        .alert-error {
+            background: #fadbd8;
+            border-color: #e74c3c;
+            color: #c0392b;
+        }
+        
+        .alert-info {
+            background: #d6eaf8;
+            border-color: #3498db;
+            color: #1f618d;
+        }
+        
+        .file-upload {
+            border: 2px dashed #bdc3c7;
+            border-radius: 6px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+        
+        .file-upload.dragover {
+            border-color: #27ae60;
+            background: #d5f4e6;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: #ecf0f1;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 Instrument Enrollment Interface</h1>
+        <p>Register and manage laboratory instruments for protocol building</p>
+    </div>
+    
+    <div class="container">
+        <!-- Left Panel: Instrument Registration -->
+        <div class="panel">
+            <h2>Register New Instrument</h2>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('basic')">Basic Info</button>
+                <button class="tab" onclick="switchTab('capabilities')">Capabilities</button>
+                <button class="tab" onclick="switchTab('parameters')">Parameters</button>
+            </div>
+            
+            <form id="instrumentForm">
+                <!-- Basic Information Tab -->
+                <div id="basic-tab" class="tab-content active">
+                    <div class="form-group">
+                        <label for="instrumentType">Instrument Type:</label>
+                        <select id="instrumentType" name="instrumentType" required>
+                            <option value="">Select instrument type...</option>
+                            <option value="flow_cytometer">Flow Cytometer</option>
+                            <option value="mass_spectrometer">Mass Spectrometer</option>
+                            <option value="nmr_spectrometer">NMR Spectrometer</option>
+                            <option value="liquid_handler">Liquid Handler</option>
+                            <option value="high_content_imaging">High-Content Imaging</option>
+                            <option value="qpcr_system">qPCR System</option>
+                            <option value="ngs_sequencer">NGS Sequencer</option>
+                            <option value="protein_purification">Protein Purification</option>
+                            <option value="cell_sorter">Cell Sorter</option>
+                            <option value="automated_western">Automated Western</option>
+                            <option value="custom">Custom Instrument</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="instrumentName">Instrument Name:</label>
+                        <input type="text" id="instrumentName" name="instrumentName" placeholder="e.g., BD FACSCanto III" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="vendor">Vendor:</label>
+                        <input type="text" id="vendor" name="vendor" placeholder="e.g., BD Biosciences">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="model">Model:</label>
+                        <input type="text" id="model" name="model" placeholder="e.g., FACSCanto III">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="serialNumber">Serial Number:</label>
+                        <input type="text" id="serialNumber" name="serialNumber" placeholder="Optional">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="location">Location:</label>
+                        <input type="text" id="location" name="location" placeholder="e.g., Room 301, Core Facility">
+                    </div>
+                </div>
+                
+                <!-- Capabilities Tab -->
+                <div id="capabilities-tab" class="tab-content">
+                    <div class="form-group">
+                        <label for="capabilities">Instrument Capabilities (one per line):</label>
+                        <textarea id="capabilities" name="capabilities" rows="8" placeholder="Enter capabilities, one per line:
+488nm laser
+633nm laser
+FITC detector
+PE detector
+Flow rate: 1-10000 events/sec"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="specifications">Technical Specifications:</label>
+                        <textarea id="specifications" name="specifications" rows="6" placeholder="Enter technical specifications:
+Resolution: 17,500 - 280,000
+Mass range: 50 - 6,000 Da
+Scan rate: 12 Hz"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Parameters Tab -->
+                <div id="parameters-tab" class="tab-content">
+                    <div class="form-group">
+                        <label>Custom Parameters:</label>
+                        <div id="parameterInputs">
+                            <div class="parameter-input">
+                                <input type="text" placeholder="Parameter name" id="paramName">
+                                <select id="paramType">
+                                    <option value="dropdown">Dropdown</option>
+                                    <option value="number">Number</option>
+                                    <option value="text">Text</option>
+                                </select>
+                                <input type="text" placeholder="Default/Options" id="paramOptions">
+                                <button type="button" onclick="addParameter()">Add</button>
+                            </div>
+                        </div>
+                        
+                        <div id="parameterList" class="parameter-list">
+                            <p style="text-align: center; color: #7f8c8d;">No custom parameters added</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-success">Register Instrument</button>
+                    <button type="button" class="btn" onclick="clearForm()">Clear Form</button>
+                    <button type="button" class="btn btn-warning" onclick="generateTestData()">Generate Test Data</button>
+                </div>
+            </form>
+            
+            <div id="formMessages"></div>
+        </div>
+        
+        <!-- Right Panel: Instrument Management -->
+        <div class="panel">
+            <h2>Manage Instruments</h2>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchManagementTab('list')">Instrument List</button>
+                <button class="tab" onclick="switchManagementTab('import')">Import/Export</button>
+            </div>
+            
+            <!-- Instrument List Tab -->
+            <div id="list-tab" class="tab-content active">
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <select id="filterType" onchange="filterInstruments()">
+                        <option value="">All Types</option>
+                        <option value="flow_cytometer">Flow Cytometers</option>
+                        <option value="mass_spectrometer">Mass Spectrometers</option>
+                        <option value="nmr_spectrometer">NMR Spectrometers</option>
+                        <option value="liquid_handler">Liquid Handlers</option>
+                        <option value="qpcr_system">qPCR Systems</option>
+                    </select>
+                    <button class="btn" onclick="refreshInstrumentList()">Refresh</button>
+                </div>
+                
+                <div id="instrumentList" class="instrument-list">
+                    <!-- Instruments will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Import/Export Tab -->
+            <div id="import-tab" class="tab-content">
+                <div class="form-group">
+                    <label>Export Configuration:</label>
+                    <button class="btn btn-success" onclick="exportConfiguration()">Export All Instruments</button>
+                    <p style="color: #7f8c8d; font-size: 0.9em;">Download your custom instrument configurations as JSON</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>Import Configuration:</label>
+                    <div class="file-upload" id="fileUpload" onclick="document.getElementById('fileInput').click()">
+                        <p>📁 Click to select file or drag and drop</p>
+                        <p style="color: #7f8c8d; font-size: 0.9em;">JSON configuration files only</p>
+                    </div>
+                    <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importConfiguration(this.files[0])">
+                </div>
+                
+                <div class="form-group">
+                    <label>Sample Configurations:</label>
+                    <button class="btn" onclick="loadSampleConfig('research_lab')">Research Lab Setup</button>
+                    <button class="btn" onclick="loadSampleConfig('clinical_lab')">Clinical Lab Setup</button>
+                    <button class="btn" onclick="loadSampleConfig('biotech_company')">Biotech Company Setup</button>
+                </div>
+                
+                <div id="importMessages"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="instrument_manager.js"></script>
+    <script>
+        let customParameters = [];
+        
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+        
+        function switchManagementTab(tabName) {
+            document.querySelectorAll('#import-tab, #list-tab').forEach(content => content.classList.remove('active'));
+            document.querySelector(`[onclick="switchManagementTab('${tabName}')"]`).parentElement.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+        
+        // Parameter management
+        function addParameter() {
+            const name = document.getElementById('paramName').value;
+            const type = document.getElementById('paramType').value;
+            const options = document.getElementById('paramOptions').value;
+            
+            if (!name) {
+                showMessage('Parameter name is required', 'error');
+                return;
+            }
+            
+            const parameter = {
+                name: name,
+                type: type,
+                label: name,
+                default: type === 'dropdown' ? options.split(',')[0]?.trim() : options,
+                options: type === 'dropdown' ? options.split(',').map(opt => [opt.trim(), opt.trim()]) : undefined
+            };
+            
+            customParameters.push(parameter);
+            updateParameterList();
+            
+            // Clear inputs
+            document.getElementById('paramName').value = '';
+            document.getElementById('paramOptions').value = '';
+        }
+        
+        function removeParameter(index) {
+            customParameters.splice(index, 1);
+            updateParameterList();
+        }
+        
+        function updateParameterList() {
+            const listElement = document.getElementById('parameterList');
+            
+            if (customParameters.length === 0) {
+                listElement.innerHTML = '<p style="text-align: center; color: #7f8c8d;">No custom parameters added</p>';
+                return;
+            }
+            
+            listElement.innerHTML = customParameters.map((param, index) => `
+                <div class="parameter-item">
+                    <div>
+                        <strong>${param.name}</strong> (${param.type})
+                        ${param.type === 'dropdown' ? `- Options: ${param.options.map(o => o[0]).join(', ')}` : ''}
+                    </div>
+                    <button type="button" onclick="removeParameter(${index})" style="background: #e74c3c; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px;">Remove</button>
+                </div>
+            `).join('');
+        }
+        
+        // Form handling
+        function clearForm() {
+            document.getElementById('instrumentForm').reset();
+            customParameters = [];
+            updateParameterList();
+        }
+        
+        function generateTestData() {
+            const types = ['flow_cytometer', 'mass_spectrometer', 'qpcr_system'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            
+            document.getElementById('instrumentType').value = type;
+            document.getElementById('instrumentName').value = `Test ${type.replace('_', ' ')} ${Math.floor(Math.random() * 1000)}`;
+            document.getElementById('vendor').value = 'Test Vendor';
+            document.getElementById('model').value = 'Test Model';
+            document.getElementById('location').value = 'Test Lab';
+            
+            if (type === 'flow_cytometer') {
+                document.getElementById('capabilities').value = `488nm laser
+633nm laser
+FITC detector
+PE detector
+Flow rate: 100-10000 events/sec`;
+            } else if (type === 'mass_spectrometer') {
+                document.getElementById('capabilities').value = `ESI ionization
+Orbitrap analyzer
+Mass range: 50-2000 Da
+Resolution: 17500-280000`;
+            }
+        }
+        
+        document.getElementById('instrumentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const instrumentData = Object.fromEntries(formData.entries());
+            
+            // Parse capabilities
+            const capabilities = instrumentData.capabilities ? 
+                instrumentData.capabilities.split('\n').filter(line => line.trim()) : [];
+            
+            // Build configuration object
+            const config = {
+                vendor: instrumentData.vendor,
+                model: instrumentData.model,
+                serialNumber: instrumentData.serialNumber,
+                location: instrumentData.location,
+                capabilities: capabilities,
+                specifications: instrumentData.specifications,
+                customParameters: customParameters.length > 0 ? customParameters : undefined,
+                customAdded: true
+            };
+            
+            try {
+                // Register the instrument
+                instrumentManager.addInstrument(
+                    instrumentData.instrumentType,
+                    instrumentData.instrumentName,
+                    config
+                );
+                
+                // Create custom block if needed
+                if (instrumentData.instrumentType !== 'custom') {
+                    instrumentManager.createCustomBlock(
+                        instrumentData.instrumentType,
+                        instrumentData.instrumentName,
+                        config
+                    );
+                }
+                
+                showMessage(`Instrument "${instrumentData.instrumentName}" registered successfully!`, 'success');
+                clearForm();
+                refreshInstrumentList();
+                
+            } catch (error) {
+                showMessage('Error registering instrument: ' + error.message, 'error');
+            }
+        });
+        
+        // Instrument list management
+        function refreshInstrumentList() {
+            const listElement = document.getElementById('instrumentList');
+            const filterType = document.getElementById('filterType').value;
+            
+            let html = '';
+            
+            instrumentManager.getInstrumentTypes().forEach(type => {
+                if (filterType && filterType !== type) return;
+                
+                const instruments = instrumentManager.getInstruments(type);
+                instruments.forEach((config, name) => {
+                    html += `
+                        <div class="instrument-item">
+                            <div class="instrument-info">
+                                <h4>${name}</h4>
+                                <p><strong>Type:</strong> ${type.replace('_', ' ')}</p>
+                                <p><strong>Vendor:</strong> ${config.vendor || 'Unknown'}</p>
+                                <p><strong>Model:</strong> ${config.model || 'Unknown'}</p>
+                                ${config.location ? `<p><strong>Location:</strong> ${config.location}</p>` : ''}
+                                ${config.customAdded ? '<p style="color: #27ae60;"><strong>Custom Instrument</strong></p>' : '<p style="color: #7f8c8d;">Default Instrument</p>'}
+                            </div>
+                            <div>
+                                <button class="btn" onclick="viewInstrumentDetails('${type}', '${name}')">View Details</button>
+                                ${config.customAdded ? `<button class="btn btn-danger" onclick="removeInstrument('${type}', '${name}')">Remove</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+            
+            if (!html) {
+                html = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">No instruments found</p>';
+            }
+            
+            listElement.innerHTML = html;
+        }
+        
+        function filterInstruments() {
+            refreshInstrumentList();
+        }
+        
+        function removeInstrument(type, name) {
+            if (confirm(`Are you sure you want to remove "${name}"?`)) {
+                instrumentManager.removeInstrument(type, name);
+                showMessage(`Instrument "${name}" removed successfully`, 'success');
+                refreshInstrumentList();
+            }
+        }
+        
+        function viewInstrumentDetails(type, name) {
+            const config = instrumentManager.getInstrumentConfig(type, name);
+            
+            let details = `Instrument: ${name}\n`;
+            details += `Type: ${type}\n`;
+            details += `Vendor: ${config.vendor || 'Unknown'}\n`;
+            details += `Model: ${config.model || 'Unknown'}\n`;
+            
+            if (config.capabilities && config.capabilities.length > 0) {
+                details += `\nCapabilities:\n${config.capabilities.join('\n')}`;
+            }
+            
+            if (config.specifications) {
+                details += `\nSpecifications:\n${config.specifications}`;
+            }
+            
+            alert(details);
+        }
+        
+        // Import/Export functionality
+        function exportConfiguration() {
+            instrumentManager.exportConfiguration();
+            showMessage('Configuration exported successfully', 'success', 'importMessages');
+        }
+        
+        function importConfiguration(file) {
+            if (!file) return;
+            
+            instrumentManager.importConfiguration(file)
+                .then(message => {
+                    showMessage(message, 'success', 'importMessages');
+                    refreshInstrumentList();
+                })
+                .catch(error => {
+                    showMessage(error, 'error', 'importMessages');
+                });
+        }
+        
+        function loadSampleConfig(configType) {
+            const configs = {
+                research_lab: [
+                    {type: 'flow_cytometer', name: 'Research Flow Cytometer', config: {vendor: 'BD', model: 'LSRFortessa', capabilities: ['488nm laser', '633nm laser', 'FITC', 'PE', 'APC']}},
+                    {type: 'qpcr_system', name: 'Research qPCR', config: {vendor: 'Bio-Rad', model: 'CFX384', capabilities: ['384 wells', 'SYBR Green', 'TaqMan']}},
+                    {type: 'mass_spectrometer', name: 'Research MS', config: {vendor: 'Thermo', model: 'Orbitrap Fusion', capabilities: ['ESI', 'Orbitrap', 'High resolution']}}
+                ],
+                clinical_lab: [
+                    {type: 'flow_cytometer', name: 'Clinical Flow Cytometer', config: {vendor: 'Beckman', model: 'DxFLEX', capabilities: ['Clinical validated', 'FITC', 'PE']}},
+                    {type: 'qpcr_system', name: 'Clinical qPCR', config: {vendor: 'Roche', model: 'LightCycler 480', capabilities: ['Clinical validated', 'TaqMan']}}
+                ],
+                biotech_company: [
+                    {type: 'liquid_handler', name: 'HTS Liquid Handler', config: {vendor: 'Hamilton', model: 'STAR', capabilities: ['1536 wells', 'High throughput']}},
+                    {type: 'high_content_imaging', name: 'HCS System', config: {vendor: 'Molecular Devices', model: 'ImageXpress', capabilities: ['384 wells', 'Multiple channels']}}
+                ]
+            };
+            
+            const instruments = configs[configType];
+            instruments.forEach(({type, name, config}) => {
+                instrumentManager.addInstrument(type, name, {...config, customAdded: true});
+            });
+            
+            showMessage(`${configType.replace('_', ' ')} configuration loaded`, 'success', 'importMessages');
+            refreshInstrumentList();
+        }
+        
+        // File upload handling
+        const fileUpload = document.getElementById('fileUpload');
+        
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+        
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+        
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                importConfiguration(files[0]);
+            }
+        });
+        
+        // Utility functions
+        function showMessage(message, type = 'info', targetId = 'formMessages') {
+            const messagesElement = document.getElementById(targetId);
+            const alertClass = `alert-${type}`;
+            
+            messagesElement.innerHTML = `
+                <div class="alert ${alertClass}">
+                    ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                messagesElement.innerHTML = '';
+            }, 5000);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshInstrumentList();
+        });
+    </script>
+</body>
+</html>

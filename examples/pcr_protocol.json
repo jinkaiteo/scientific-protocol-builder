@@ -1,0 +1,149 @@
+{
+  "name": "PCR Protocol Example",
+  "description": "A complete PCR amplification protocol with quality controls",
+  "blocks": [
+    {
+      "type": "protocol_definition",
+      "fields": {
+        "PROTOCOL_NAME": "PCR_Amplification",
+        "DESCRIPTION": "Standard PCR protocol for DNA amplification"
+      },
+      "inputs": [
+        {
+          "type": "protocol_input",
+          "fields": {
+            "INPUT_NAME": "template_dna",
+            "INPUT_TYPE": "sample",
+            "REQUIRED": true,
+            "DESCRIPTION": "Template DNA for amplification"
+          }
+        },
+        {
+          "type": "protocol_input",
+          "fields": {
+            "INPUT_NAME": "primer_concentration",
+            "INPUT_TYPE": "number",
+            "REQUIRED": false,
+            "DESCRIPTION": "Primer concentration in μM"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "reagent_variable",
+          "fields": {
+            "NAME": "taq_polymerase",
+            "CONCENTRATION": "5",
+            "UNITS": "U/μL",
+            "VOLUME": "0.5",
+            "STORAGE": "-20C",
+            "DESCRIPTION": "Thermostable DNA polymerase"
+          }
+        },
+        {
+          "type": "reagent_variable",
+          "fields": {
+            "NAME": "pcr_buffer",
+            "CONCENTRATION": "10",
+            "UNITS": "X",
+            "VOLUME": "5",
+            "STORAGE": "-20C",
+            "DESCRIPTION": "PCR reaction buffer"
+          }
+        },
+        {
+          "type": "preparation_step",
+          "fields": {
+            "WHAT": "PCR master mix",
+            "METHOD": "pipetting"
+          },
+          "substeps": [
+            {
+              "type": "transfer_step",
+              "values": {
+                "VOLUME": "5"
+              },
+              "fields": {
+                "METHOD": "pipette",
+                "TIP_TYPE": "filter"
+              }
+            }
+          ]
+        },
+        {
+          "type": "mixing_step",
+          "fields": {
+            "COMPONENTS": "PCR master mix",
+            "METHOD": "pipette"
+          },
+          "values": {
+            "VOLUME": "50",
+            "SPEED": "0",
+            "TIME": "0.5"
+          }
+        },
+        {
+          "type": "controls_repeat_ext",
+          "values": {
+            "TIMES": "35"
+          },
+          "substeps": [
+            {
+              "type": "incubation_step",
+              "fields": {
+                "SAMPLE": "PCR reaction",
+                "CONDITIONS": "static"
+              },
+              "values": {
+                "TEMPERATURE": "94",
+                "TIME": "0.5"
+              }
+            },
+            {
+              "type": "incubation_step",
+              "fields": {
+                "SAMPLE": "PCR reaction",
+                "CONDITIONS": "static"
+              },
+              "values": {
+                "TEMPERATURE": "55",
+                "TIME": "0.5"
+              }
+            },
+            {
+              "type": "incubation_step",
+              "fields": {
+                "SAMPLE": "PCR reaction",
+                "CONDITIONS": "static"
+              },
+              "values": {
+                "TEMPERATURE": "72",
+                "TIME": "1"
+              }
+            }
+          ]
+        },
+        {
+          "type": "measurement_step",
+          "fields": {
+            "MEASUREMENT_TYPE": "absorbance",
+            "RESULT_VAR": "dna_concentration"
+          },
+          "values": {
+            "WAVELENGTH": "260"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "type": "protocol_output",
+          "fields": {
+            "OUTPUT_NAME": "amplified_dna",
+            "OUTPUT_TYPE": "sample",
+            "DESCRIPTION": "PCR amplified DNA product"
+          }
+        }
+      ]
+    }
+  ]
+}

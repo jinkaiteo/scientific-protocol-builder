@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Specialized Equipment Protocol Builder</title>
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .hero {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .hero h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .demo-container {
+            background: white;
+            margin: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .controls {
+            background: #34495e;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-equipment { background: #e74c3c; }
+        .btn-equipment:hover { background: #c0392b; }
+        
+        .demo-content {
+            display: flex;
+            height: 700px;
+        }
+        
+        .blockly-panel {
+            flex: 2;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        .output-panel {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem;
+        }
+        
+        .equipment-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+        }
+        
+        .equipment-card h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .equipment-icon {
+            font-size: 1.5em;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 0.3rem 0;
+            color: #666;
+        }
+        
+        .feature-list li:before {
+            content: "✓ ";
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .output-section {
+            background: white;
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>🔬 Advanced Laboratory Equipment</h1>
+        <p>Build protocols with specialized research instrumentation</p>
+    </div>
+    
+    <div class="demo-container">
+        <div class="controls">
+            <span style="font-weight: bold;">Load Example Protocols:</span>
+            <button class="btn btn-equipment" onclick="loadProtocol('proteomics')">🧬 Proteomics Workflow</button>
+            <button class="btn btn-equipment" onclick="loadProtocol('genomics')">🧪 Genomics Pipeline</button>
+            <button class="btn btn-equipment" onclick="loadProtocol('cell_analysis')">🔬 Cell Analysis</button>
+            <button class="btn" onclick="openInstrumentManager()">🔧 Manage Instruments</button>
+            <button class="btn" onclick="generateReadable()">📄 Generate Protocol</button>
+            <button class="btn" onclick="generatePython()">🐍 Python Code</button>
+            <button class="btn" onclick="clearWorkspace()">🗑️ Clear</button>
+        </div>
+        
+        <div class="demo-content">
+            <div class="blockly-panel">
+                <div id="blocklyDiv" style="height: 100%; width: 100%;"></div>
+            </div>
+            
+            <div class="output-panel">
+                <div class="output-section">
+                    <h3>🎯 Protocol Output</h3>
+                    <div id="outputContent">
+                        <p style="color: #7f8c8d; text-align: center; padding: 2rem;">
+                            Load an example protocol or build your own with specialized equipment blocks.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="equipment-grid">
+        <div class="equipment-card">
+            <h3><span class="equipment-icon">📊</span>Flow Cytometry</h3>
+            <ul class="feature-list">
+                <li>Multi-laser configuration (405nm, 488nm, 633nm)</li>
+                <li>Advanced detectors (FSC, SSC, FITC, PE, APC)</li>
+                <li>Configurable flow rates and event counting</li>
+                <li>Gating strategies for cell population analysis</li>
+            </ul>
+        </div>
+        
+        <div class="equipment-card">
+            <h3><span class="equipment-icon">⚗️</span>Mass Spectrometry</h3>
+            <ul class="feature-list">
+                <li>Multiple ionization methods (ESI, MALDI, APCI)</li>
+                <li>Various analyzers (Quadrupole, TOF, Orbitrap)</li>
+                <li>Configurable mass ranges and resolution</li>
+                <li>Positive/negative mode detection</li>
+            </ul>
+        </div>
+        
+        <div class="equipment-card">
+            <h3><span class="equipment-icon">🧲</span>NMR Spectroscopy</h3>
+            <ul class="feature-list">
+                <li>Multi-nuclear analysis (1H, 13C, 15N, 31P)</li>
+                <li>1D and 2D experiments (COSY, HSQC, NOESY)</li>
+                <li>Variable frequency spectrometers</li>
+                <li>Automated pulse sequence optimization</li>
+            </ul>
+        </div>
+        
+        <div class="equipment-card">
+            <h3><span class="equipment-icon">🤖</span>Liquid Handling</h3>
+            <ul class="feature-list">
+                <li>Multiple platform support (Hamilton, Tecan, Biomek)</li>
+                <li>Precision pipetting with quality control</li>
+                <li>Automated tip management and mixing</li>
+                <li>Plate-to-plate transfers with tracking</li>
+            </ul>
+        </div>
+        
+        <div class="equipment-card">
+            <h3><span class="equipment-icon">🔬</span>High-Content Imaging</h3>
+            <ul class="feature-list">
+                <li>Multi-channel fluorescence imaging</li>
+                <li>Z-stack acquisition for 3D analysis</li>
+                <li>Automated image analysis pipelines</li>
+                <li>Cell counting and morphology analysis</li>
+            </ul>
+        </div>
+        
+        <div class="equipment-card">
+            <h3><span class="equipment-icon">🧬</span>qPCR & NGS</h3>
+            <ul class="feature-list">
+                <li>Real-time PCR with melt curve analysis</li>
+                <li>Next-generation sequencing platforms</li>
+                <li>Automated library preparation</li>
+                <li>Quality control and data analysis</li>
+            </ul>
+        </div>
+        
+        <div class="equipment-card">
+            <h3><span class="equipment-icon">🧪</span>Protein Analysis</h3>
+            <ul class="feature-list">
+                <li>FPLC purification systems</li>
+                <li>Automated western blot analysis</li>
+                <li>FACS cell sorting capabilities</li>
+                <li>Multi-method protein characterization</li>
+            </ul>
+        </div>
+        
+        <div class="equipment-card">
+            <h3><span class="equipment-icon">📈</span>Data Integration</h3>
+            <ul class="feature-list">
+                <li>Automated data collection and analysis</li>
+                <li>Quality control monitoring</li>
+                <li>Result validation and reporting</li>
+                <li>Integration with LIMS systems</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script src="blocks/experiment_blocks.js"></script>
+    <script src="blocks/variable_blocks.js"></script>
+    <script src="blocks/control_blocks.js"></script>
+    <script src="blocks/specialized_equipment_blocks.js"></script>
+    <script src="generators/python_generator.js"></script>
+    <script src="generators/readable_generator.js"></script>
+    <script src="generators/specialized_equipment_python.js"></script>
+    <script src="generators/specialized_equipment_readable.js"></script>
+    <script src="protocol_analyzer.js"></script>
+    <script src="instrument_manager.js"></script>
+    
+    <script>
+        let workspace;
+        
+        const toolbox = {
+            "kind": "categoryToolbox",
+            "contents": [
+                {
+                    "kind": "category",
+                    "name": "Variables & Materials",
+                    "colour": "#27ae60",
+                    "contents": [
+                        {"kind": "block", "type": "sample_variable"},
+                        {"kind": "block", "type": "reagent_variable"},
+                        {"kind": "block", "type": "equipment_variable"},
+                        {"kind": "block", "type": "parameter_variable"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Basic Experiment Steps",
+                    "colour": "#3498db",
+                    "contents": [
+                        {"kind": "block", "type": "preparation_step"},
+                        {"kind": "block", "type": "mixing_step"},
+                        {"kind": "block", "type": "incubation_step"},
+                        {"kind": "block", "type": "transfer_step"},
+                        {"kind": "block", "type": "centrifuge_step"},
+                        {"kind": "block", "type": "wash_step"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "🔬 Advanced Instrumentation",
+                    "colour": "#e74c3c",
+                    "contents": [
+                        {"kind": "block", "type": "flow_cytometer"},
+                        {"kind": "block", "type": "mass_spectrometer"},
+                        {"kind": "block", "type": "nmr_spectrometer"},
+                        {"kind": "block", "type": "liquid_handler"},
+                        {"kind": "block", "type": "high_content_imaging"},
+                        {"kind": "block", "type": "qpcr_system"},
+                        {"kind": "block", "type": "ngs_sequencer"},
+                        {"kind": "block", "type": "protein_purification"},
+                        {"kind": "block", "type": "cell_sorter"},
+                        {"kind": "block", "type": "automated_western"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Control Flow",
+                    "colour": "#9b59b6",
+                    "contents": [
+                        {"kind": "block", "type": "controls_if"},
+                        {"kind": "block", "type": "controls_repeat_ext"},
+                        {"kind": "block", "type": "protocol_sequence"},
+                        {"kind": "block", "type": "parallel_steps"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Logic & Math",
+                    "colour": "#e67e22",
+                    "contents": [
+                        {"kind": "block", "type": "logic_compare"},
+                        {"kind": "block", "type": "logic_boolean"},
+                        {"kind": "block", "type": "math_number"},
+                        {"kind": "block", "type": "text"}
+                    ]
+                },
+                {
+                    "kind": "category",
+                    "name": "Protocol Management",
+                    "colour": "#f39c12",
+                    "contents": [
+                        {"kind": "block", "type": "protocol_definition"},
+                        {"kind": "block", "type": "protocol_input"},
+                        {"kind": "block", "type": "protocol_output"}
+                    ]
+                }
+            ]
+        };
+        
+        // Initialize workspace
+        document.addEventListener('DOMContentLoaded', function() {
+            workspace = Blockly.inject('blocklyDiv', {
+                toolbox: toolbox,
+                grid: {spacing: 20, length: 3, colour: '#ccc', snap: true},
+                zoom: {controls: true, wheel: true, startScale: 0.8},
+                trashcan: true,
+                sounds: false
+            });
+        });
+        
+        function loadProtocol(type) {
+            workspace.clear();
+            
+            if (type === 'proteomics') {
+                loadProteomicsWorkflow();
+            } else if (type === 'genomics') {
+                loadGenomicsWorkflow();
+            } else if (type === 'cell_analysis') {
+                loadCellAnalysisWorkflow();
+            }
+            
+            showAlert('Advanced protocol loaded!', 'success');
+        }
+        
+        function loadProteomicsWorkflow() {
+            const xml = Blockly.Xml.textToDom(`
+            <xml xmlns="https://developers.google.com/blockly/xml">
+                <block type="protocol_definition" x="20" y="20">
+                    <field name="PROTOCOL_NAME">Proteomics_Analysis</field>
+                    <field name="DESCRIPTION">Complete protein identification and quantification workflow</field>
+                    <statement name="STEPS">
+                        <block type="sample_variable">
+                            <field name="NAME">protein_extract</field>
+                            <field name="TYPE">PROTEIN</field>
+                            <field name="DESCRIPTION">Cell lysate protein extract</field>
+                            <next>
+                                <block type="protein_purification">
+                                    <field name="SYSTEM">AKTA_PURE</field>
+                                    <field name="METHOD">SEC</field>
+                                    <field name="GRADIENT">LINEAR</field>
+                                    <field name="DETECTION">UV280</field>
+                                    <field name="RESULT_VAR">purified_protein</field>
+                                    <value name="FLOW_RATE">
+                                        <block type="math_number"><field name="NUM">1</field></block>
+                                    </value>
+                                    <next>
+                                        <block type="mass_spectrometer">
+                                            <field name="IONIZATION">ESI</field>
+                                            <field name="ANALYZER">ORBITRAP</field>
+                                            <field name="MODE">POSITIVE</field>
+                                            <field name="RESULT_VAR">ms_data</field>
+                                            <value name="MASS_RANGE_LOW">
+                                                <block type="math_number"><field name="NUM">200</field></block>
+                                            </value>
+                                            <value name="MASS_RANGE_HIGH">
+                                                <block type="math_number"><field name="NUM">2000</field></block>
+                                            </value>
+                                            <next>
+                                                <block type="automated_western">
+                                                    <field name="SYSTEM">CHEMIDOC</field>
+                                                    <field name="GEL_TYPE">BIS_TRIS</field>
+                                                    <field name="DETECTION">ECL</field>
+                                                    <field name="RESULT_VAR">western_results</field>
+                                                    <value name="SAMPLE_VOLUME">
+                                                        <block type="math_number"><field name="NUM">20</field></block>
+                                                    </value>
+                                                </block>
+                                            </next>
+                                        </block>
+                                    </next>
+                                </block>
+                            </next>
+                        </block>
+                    </statement>
+                </block>
+            </xml>`);
+            Blockly.Xml.domToWorkspace(xml, workspace);
+        }
+        
+        function loadGenomicsWorkflow() {
+            const xml = Blockly.Xml.textToDom(`
+            <xml xmlns="https://developers.google.com/blockly/xml">
+                <block type="protocol_definition" x="20" y="20">
+                    <field name="PROTOCOL_NAME">Genomics_Pipeline</field>
+                    <field name="DESCRIPTION">DNA sequencing and analysis pipeline</field>
+                    <statement name="STEPS">
+                        <block type="sample_variable">
+                            <field name="NAME">genomic_dna</field>
+                            <field name="TYPE">DNA</field>
+                            <field name="DESCRIPTION">High-quality genomic DNA</field>
+                            <next>
+                                <block type="qpcr_system">
+                                    <field name="SYSTEM">CFX96</field>
+                                    <field name="VOLUME">20</field>
+                                    <field name="CHEMISTRY">SYBR</field>
+                                    <field name="MELT_CURVE">TRUE</field>
+                                    <field name="RESULT_VAR">qpcr_results</field>
+                                    <value name="CYCLES">
+                                        <block type="math_number"><field name="NUM">40</field></block>
+                                    </value>
+                                    <next>
+                                        <block type="ngs_sequencer">
+                                            <field name="PLATFORM">NOVASEQ</field>
+                                            <field name="READ_TYPE">PAIRED</field>
+                                            <field name="KIT">V4</field>
+                                            <field name="QC_ENABLE">TRUE</field>
+                                            <field name="RESULT_VAR">sequencing_data</field>
+                                            <value name="READ_LENGTH">
+                                                <block type="math_number"><field name="NUM">150</field></block>
+                                            </value>
+                                            <value name="COVERAGE">
+                                                <block type="math_number"><field name="NUM">30</field></block>
+                                            </value>
+                                        </block>
+                                    </next>
+                                </block>
+                            </next>
+                        </block>
+                    </statement>
+                </block>
+            </xml>`);
+            Blockly.Xml.domToWorkspace(xml, workspace);
+        }
+        
+        function loadCellAnalysisWorkflow() {
+            const xml = Blockly.Xml.textToDom(`
+            <xml xmlns="https://developers.google.com/blockly/xml">
+                <block type="protocol_definition" x="20" y="20">
+                    <field name="PROTOCOL_NAME">Cell_Analysis_Workflow</field>
+                    <field name="DESCRIPTION">Comprehensive cell analysis and sorting</field>
+                    <statement name="STEPS">
+                        <block type="sample_variable">
+                            <field name="NAME">cell_suspension</field>
+                            <field name="TYPE">CELLS</field>
+                            <field name="DESCRIPTION">Primary cell culture</field>
+                            <next>
+                                <block type="flow_cytometer">
+                                    <field name="LASER">488</field>
+                                    <field name="DETECTOR">FITC</field>
+                                    <field name="GATING">viable cells</field>
+                                    <field name="RESULT_VAR">flow_analysis</field>
+                                    <value name="FLOW_RATE">
+                                        <block type="math_number"><field name="NUM">100</field></block>
+                                    </value>
+                                    <value name="EVENT_COUNT">
+                                        <block type="math_number"><field name="NUM">50000</field></block>
+                                    </value>
+                                    <next>
+                                        <block type="cell_sorter">
+                                            <field name="SORTER">FACSARIA</field>
+                                            <field name="NOZZLE">85</field>
+                                            <field name="PRECISION">PURITY</field>
+                                            <field name="POST_ANALYSIS">TRUE</field>
+                                            <field name="RESULT_VAR">sorted_cells</field>
+                                            <value name="FLOW_RATE">
+                                                <block type="math_number"><field name="NUM">1000</field></block>
+                                            </value>
+                                            <next>
+                                                <block type="high_content_imaging">
+                                                    <field name="MICROSCOPE">OPERA</field>
+                                                    <field name="OBJECTIVE">20X</field>
+                                                    <field name="DAPI">TRUE</field>
+                                                    <field name="FITC">TRUE</field>
+                                                    <field name="ANALYSIS">COUNTING</field>
+                                                    <field name="RESULT_VAR">imaging_results</field>
+                                                    <value name="FIELDS_PER_WELL">
+                                                        <block type="math_number"><field name="NUM">9</field></block>
+                                                    </value>
+                                                </block>
+                                            </next>
+                                        </block>
+                                    </next>
+                                </block>
+                            </next>
+                        </block>
+                    </statement>
+                </block>
+            </xml>`);
+            Blockly.Xml.domToWorkspace(xml, workspace);
+        }
+        
+        function generateReadable() {
+            try {
+                const code = ReadableGenerator.workspaceToCode(workspace);
+                displayOutput('Advanced Protocol Documentation', code);
+                showAlert('Advanced protocol documentation generated!', 'success');
+            } catch (error) {
+                showAlert('Error generating documentation: ' + error.message, 'error');
+            }
+        }
+        
+        function generatePython() {
+            try {
+                const code = PythonGenerator.workspaceToCode(workspace);
+                displayOutput('Python Code with Advanced Instrumentation', code);
+                showAlert('Python code with advanced instrumentation generated!', 'success');
+            } catch (error) {
+                showAlert('Error generating Python code: ' + error.message, 'error');
+            }
+        }
+        
+        function displayOutput(title, content) {
+            document.getElementById('outputContent').innerHTML = `
+                <h4>${title}</h4>
+                <pre><code>${content}</code></pre>
+            `;
+        }
+        
+        function clearWorkspace() {
+            if (confirm('Clear the workspace?')) {
+                workspace.clear();
+                document.getElementById('outputContent').innerHTML = `
+                    <p style="color: #7f8c8d; text-align: center; padding: 2rem;">
+                        Load an example protocol or build your own with specialized equipment blocks.
+                    </p>
+                `;
+                showAlert('Workspace cleared', 'warning');
+            }
+        }
+        
+        function openInstrumentManager() {
+            window.open('instrument_enrollment_ui.html', '_blank', 'width=1400,height=800');
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 6px;
+                color: white;
+                font-weight: bold;
+                z-index: 1000;
+                min-width: 300px;
+                background: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#f39c12'};
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
